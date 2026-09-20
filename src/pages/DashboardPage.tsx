@@ -93,6 +93,13 @@ const QUICK_LINKS = [
     live: true,
   },
   {
+    title: "举报处置",
+    desc: "用户举报工单",
+    to: "/safety/reports",
+    icon: <AlertOutlined />,
+    live: true,
+  },
+  {
     title: "城市与兴趣",
     desc: "开放域字典",
     to: "/config/taxonomy",

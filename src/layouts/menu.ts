@@ -171,8 +171,8 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "动态管理",
         icon: TrophyOutlined,
         closable: true,
-        status: "preview",
-        blurb: "活动种草 / 复盘流；待审走「内容审核 · 历史动态」。",
+        status: "live",
+        blurb: "活动种草 / 复盘流；待审也可在「内容审核 · 历史动态」。",
       },
     ],
   },
@@ -236,11 +236,11 @@ export const APP_MENU_TREE: AppMenuNode[] = [
       {
         key: "conversations",
         path: "/conversations",
-        title: "会话只读",
+        title: "消息关系",
         icon: SoundOutlined,
         closable: true,
         status: "live",
-        blurb: "会话元数据；消息体在云 IM。",
+        blurb: "会话 / 好友 / 打招呼 / 转账 / 通话只读；消息体在云 IM。",
       },
     ],
   },
@@ -255,8 +255,8 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "举报处置",
         icon: AlertOutlined,
         closable: true,
-        status: "preview",
-        blurb: "工单视图预览；完整处置在「内容审核 · 举报工单」。",
+        status: "live",
+        blurb: "用户举报工单；与「内容审核 · 举报工单」同源。",
       },
       {
         key: "safety-blocks",
@@ -574,7 +574,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   community: {
     title: "动态管理",
     blurb: "活动种草 / 复盘流；待审走内容审核。",
-    status: "preview",
+    status: "live",
     iosRef: "Features/Community",
     metrics: [
       { label: "已发布", value: "—" },
@@ -590,7 +590,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { author: "林夏", summary: "滨江夜骑复盘…", activity: "夜骑滨江", status: "已发布" },
       { author: "周然", summary: "市集打卡", activity: "—", status: "待审" },
     ],
-    nextApis: ["GET /admin/v1/community/posts（已有审核）"],
+    nextApis: ["GET /admin/v1/community/posts"],
   },
   orders: {
     title: "订单中心",
@@ -680,8 +680,8 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   },
   "safety-reports": {
     title: "举报处置",
-    blurb: "工单视图预览；完整处置在「内容审核 · 举报工单」。",
-    status: "preview",
+    blurb: "用户举报工单；与内容审核同源。",
+    status: "live",
     iosRef: "举报 Sheet · TrustSafetyCheckIn",
     metrics: [
       { label: "待处理", value: "见审核" },
@@ -696,7 +696,26 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
     rows: [
       { from: "用户A", to: "用户B", reason: "骚扰", status: "待处理" },
     ],
-    nextApis: ["GET /admin/v1/reports（已有）"],
+    nextApis: ["GET /admin/v1/reports"],
+  },
+  conversations: {
+    title: "消息关系",
+    blurb: "会话 / 好友 / 打招呼 / 转账 / 通话只读。",
+    status: "live",
+    iosRef: "消息 Tab",
+    columns: [
+      { title: "标题", dataIndex: "title" },
+      { title: "类型", dataIndex: "kind" },
+      { title: "成员", dataIndex: "members" },
+    ],
+    rows: [],
+    nextApis: [
+      "GET /admin/v1/conversations",
+      "GET /admin/v1/friendships",
+      "GET /admin/v1/message-requests",
+      "GET /admin/v1/transfers",
+      "GET /admin/v1/calls",
+    ],
   },
   "safety-blocks": {
     title: "拉黑与限流",
@@ -730,19 +749,6 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
     ],
     rows: [],
     nextApis: ["GET/POST /admin/v1/sensitive-words"],
-  },
-  conversations: {
-    title: "会话只读",
-    blurb: "会话元数据；消息体在云 IM。",
-    status: "live",
-    iosRef: "消息 Tab · 会话列表",
-    columns: [
-      { title: "标题", dataIndex: "title" },
-      { title: "类型", dataIndex: "kind" },
-      { title: "成员", dataIndex: "members" },
-    ],
-    rows: [],
-    nextApis: ["GET /admin/v1/conversations"],
   },
   "config-taxonomy": {
     title: "城市与兴趣",

@@ -22,6 +22,8 @@ import {
 } from "./pages/OpsPages";
 import ActivitiesPage from "./pages/ActivitiesPage";
 import ConversationsPage from "./pages/ConversationsPage";
+import CommunityPage from "./pages/CommunityPage";
+import SafetyReportsPage from "./pages/SafetyReportsPage";
 import { APP_MENUS } from "./layouts/menu";
 import { isLoggedIn } from "./auth/session";
 
@@ -50,6 +52,8 @@ const LIVE_PATHS = new Set([
   "/config/push",
   "/config/announcements",
   "/conversations",
+  "/community",
+  "/safety/reports",
 ]);
 
 const previewRoutes = APP_MENUS.filter(
@@ -85,6 +89,8 @@ export default function App() {
           <Route path="config/push" element={<PushPage />} />
           <Route path="config/announcements" element={<AnnouncementsFeedbackPage />} />
           <Route path="conversations" element={<ConversationsPage />} />
+          <Route path="community" element={<CommunityPage />} />
+          <Route path="safety/reports" element={<SafetyReportsPage />} />
           {previewRoutes.map((item) => (
             <Route
               key={item.key}
