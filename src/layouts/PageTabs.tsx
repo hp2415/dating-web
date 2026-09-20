@@ -1,13 +1,13 @@
 import { CloseOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { APP_MENUS, menuByPath, type AppMenuItem } from "./menu";
+import { APP_MENUS, menuByPath, type AppMenuLeaf } from "./menu";
 
 export default function PageTabs() {
   const location = useLocation();
   const navigate = useNavigate();
   const current = menuByPath(location.pathname);
-  const [tabs, setTabs] = useState<AppMenuItem[]>([APP_MENUS[0]]);
+  const [tabs, setTabs] = useState<AppMenuLeaf[]>([APP_MENUS[0]]);
 
   useEffect(() => {
     setTabs((prev) =>

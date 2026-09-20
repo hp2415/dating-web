@@ -51,8 +51,11 @@ export default function LoginPage() {
           </Button>
         </header>
         <Typography.Title level={4} className="login-subtitle">
-          账号密码登录
+          找搭子运营平台
         </Typography.Title>
+        <Typography.Paragraph type="secondary" style={{ marginTop: -4, marginBottom: 16 }}>
+          账号密码登录 · 企微蓝主题
+        </Typography.Paragraph>
         <Form
           form={form}
           layout="vertical"

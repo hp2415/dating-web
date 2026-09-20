@@ -1,4 +1,5 @@
-export const PRIMARY = "#e11d48";
+/** 企微蓝 WeCom primary */
+export const PRIMARY = "#267EF0";
 
 export function hexToRgb(hex: string): [number, number, number] {
   const raw = hex.replace("#", "");
@@ -26,7 +27,7 @@ export function withAlpha(hex: string, alpha: number): string {
 }
 
 export function palette(primary: string, step: 200 | 500 | 600): string {
-  if (step === 200) return mixHex(primary, "#ffffff", 0.62);
-  if (step === 600) return mixHex(primary, "#000000", 0.18);
+  if (step === 200) return mixHex(primary, "#ffffff", 0.55);
+  if (step === 600) return mixHex(primary, "#000000", 0.22);
   return primary;
 }

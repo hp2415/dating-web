@@ -9,12 +9,13 @@ import {
   SunOutlined,
 } from "@ant-design/icons";
 import { Breadcrumb, Button, Dropdown, Menu, Modal } from "antd";
+import type { MenuProps } from "antd";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SparkLogo from "../components/SparkLogo";
 import { clearSession, getAdmin } from "../auth/session";
 import { useTheme } from "../theme/ThemeProvider";
-import { APP_MENUS, menuByPath } from "./menu";
+import { APP_MENU_TREE, menuByPath, openKeysForPath } from "./menu";
 import PageTabs from "./PageTabs";
 
 const MOBILE_QUERY = "(max-width: 992px)";
@@ -29,6 +30,7 @@ export default function AdminLayout() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
   const [fullscreen, setFullscreen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [openKeys, setOpenKeys] = useState<string[]>(() => openKeysForPath(location.pathname));
 
   useEffect(() => {
     const media = window.matchMedia(MOBILE_QUERY);
@@ -47,7 +49,13 @@ export default function AdminLayout() {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
-  const siderWidth = collapsed ? 64 : 220;
+  useEffect(() => {
+    if (!collapsed || isMobile) {
+      setOpenKeys(openKeysForPath(location.pathname));
+    }
+  }, [location.pathname, collapsed, isMobile]);
+
+  const siderWidth = collapsed ? 64 : 232;
 
   const logout = () => {
     Modal.confirm({
@@ -70,19 +78,38 @@ export default function AdminLayout() {
     }
   };
 
-  const menuItems = useMemo(
+  const menuItems: MenuProps["items"] = useMemo(
     () =>
-      APP_MENUS.map((item) => ({
-        key: item.key,
-        icon: <item.icon />,
-        label: <Link to={item.path}>{item.title}</Link>,
-      })),
+      APP_MENU_TREE.map((node) => {
+        if ("children" in node) {
+          return {
+            key: node.key,
+            icon: <node.icon />,
+            label: node.title,
+            children: node.children.map((child) => ({
+              key: child.key,
+              icon: <child.icon />,
+              label: <Link to={child.path}>{child.title}</Link>,
+            })),
+          };
+        }
+        return {
+          key: node.key,
+          icon: <node.icon />,
+          label: <Link to={node.path}>{node.title}</Link>,
+        };
+      }),
     [],
   );
 
+  const breadcrumbItems = [
+    { title: <Link to="/">首页</Link> },
+    ...(current.path === "/" ? [] : [{ title: current.title }]),
+  ];
+
   return (
     <div
-      className={`admin-shell${isMobile ? " is-mobile" : ""}`}
+      className={`admin-shell${isMobile ? " is-mobile" : ""}${collapsed ? " is-collapsed" : ""}`}
       style={{ ["--admin-sider-width"]: `${isMobile ? 0 : siderWidth}px` } as CSSProperties}
     >
       {isMobile && !collapsed ? (
@@ -95,21 +122,25 @@ export default function AdminLayout() {
           {!collapsed ? (
             <span className="admin-logo__text">
               <strong>Spark</strong>
-              <em>运营后台</em>
+              <em>找搭子运营</em>
             </span>
           ) : null}
         </Link>
-        <Menu
-          mode="inline"
-          theme="light"
-          selectedKeys={[current.key]}
-          inlineCollapsed={collapsed && !isMobile}
-          items={menuItems}
-          className="admin-menu"
-          onClick={() => {
-            if (isMobile) setCollapsed(true);
-          }}
-        />
+        <div className="admin-menu-wrap">
+          <Menu
+            mode="inline"
+            theme="light"
+            selectedKeys={[current.key]}
+            openKeys={collapsed && !isMobile ? [] : openKeys}
+            onOpenChange={(keys) => setOpenKeys(keys as string[])}
+            inlineCollapsed={collapsed && !isMobile}
+            items={menuItems}
+            className="admin-menu"
+            onClick={() => {
+              if (isMobile) setCollapsed(true);
+            }}
+          />
+        </div>
       </aside>
 
       <div className="admin-main">
@@ -121,10 +152,7 @@ export default function AdminLayout() {
             title={collapsed ? "展开菜单" : "收起菜单"}
             onClick={() => setCollapsed((v) => !v)}
           />
-          <Breadcrumb
-            className="admin-breadcrumb"
-            items={[{ title: <Link to="/">首页</Link> }, { title: current.title }]}
-          />
+          <Breadcrumb className="admin-breadcrumb" items={breadcrumbItems} />
           <div className="admin-header__actions">
             <Button
               type="text"
@@ -180,7 +208,7 @@ export default function AdminLayout() {
           </div>
         </main>
 
-        <footer className="admin-footer">Spark Admin · 找搭子运营平台</footer>
+        <footer className="admin-footer">Spark Admin · 让一起玩，变得简单、自然、可信</footer>
       </div>
     </div>
   );

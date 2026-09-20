@@ -51,7 +51,7 @@ export default function ModerationPage() {
         内容审核
       </Typography.Title>
       <Typography.Paragraph type="secondary">
-        找搭子运营审核：活动为主，举报/媒体/历史动态并行处理。
+        已接后端：活动为主，举报 / 媒体 / 历史动态并行处理。对齐 iOS 发布待审 → 运营过审 → 信息流。
       </Typography.Paragraph>
       <Tabs
         items={[

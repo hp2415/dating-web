@@ -56,8 +56,8 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     [scheme, darkMode],
   );
 
-  const container = darkMode ? "#1c1c1c" : "#ffffff";
-  const layout = darkMode ? "#121212" : "#f7fafc";
+  const container = darkMode ? "#1a1f26" : "#ffffff";
+  const layout = darkMode ? "#0f1419" : "#f0f4f8";
 
   return (
     <ThemeContext.Provider value={value}>
@@ -73,7 +73,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
             colorError: "#f43f5e",
             colorBgContainer: container,
             colorBgLayout: layout,
-            borderRadius: 6,
+            borderRadius: 8,
             fontSize: 14,
             controlHeight: 36,
             fontFamily:
