@@ -316,7 +316,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "短信通道",
         icon: NotificationOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "登录验证码通道与日限额（开发码 123456）。",
       },
     ],

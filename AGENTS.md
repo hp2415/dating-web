@@ -20,9 +20,9 @@ Spark 运营后台（React 18 + Vite + Ant Design 5）。视觉参考 Skyroc 的
 | `/users` · `/users/trust` · `/users/verification` | Live（用户列表/详情 · 信任分 · 真人认证） |
 | `/safety/reports` · `/safety/blocks` · `/safety/sensitive-words` | Live |
 | `/activities` · `/activities/shelves` · `/community` | Live（货架含选品排序） |
-| `/config/taxonomy` · `/config/push` · `/config/announcements` | Live |
+| `/config/taxonomy` · `/config/push` · `/config/announcements` · `/config/sms` | Live |
 | `/conversations` | Live（会话 / 好友 / 打招呼 / 转账 / 通话） |
-| 圈子 · 语音厅 · 凭证 · 会员 · 短信 · 设置 | 预览占位（后端尚无对应 admin 列表） |
+| 圈子 · 语音厅 · 凭证 · 会员 · 设置 | 预览占位（后端尚无对应 admin 列表） |
 
 菜单树在 `src/layouts/menu.ts`（`status: live | preview`）。新 Live 页：加 leaf + `App.tsx` 路由 + `api/*`；预览页只加 leaf + `PREVIEW_SPECS`。
 

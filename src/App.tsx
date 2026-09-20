@@ -25,6 +25,7 @@ import ConversationsPage from "./pages/ConversationsPage";
 import CommunityPage from "./pages/CommunityPage";
 import SafetyReportsPage from "./pages/SafetyReportsPage";
 import UsersPage from "./pages/UsersPage";
+import SmsConfigPage from "./pages/SmsConfigPage";
 import { APP_MENUS } from "./layouts/menu";
 import { isLoggedIn } from "./auth/session";
 
@@ -53,6 +54,7 @@ const LIVE_PATHS = new Set([
   "/config/taxonomy",
   "/config/push",
   "/config/announcements",
+  "/config/sms",
   "/conversations",
   "/community",
   "/safety/reports",
@@ -91,6 +93,7 @@ export default function App() {
           <Route path="config/taxonomy" element={<TaxonomyPage />} />
           <Route path="config/push" element={<PushPage />} />
           <Route path="config/announcements" element={<AnnouncementsFeedbackPage />} />
+          <Route path="config/sms" element={<SmsConfigPage />} />
           <Route path="conversations" element={<ConversationsPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="safety/reports" element={<SafetyReportsPage />} />
