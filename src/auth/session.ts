@@ -4,6 +4,8 @@ export type AdminInfo = {
   display_name: string;
   role: string;
   is_active: boolean;
+  /** From /admin/v1/auth/me; `*` = all */
+  permissions?: string[];
 };
 
 const TOKEN_KEY = "spark_admin_token";
@@ -16,6 +18,12 @@ export function getToken(): string | null {
 export function setSession(token: string, admin: AdminInfo) {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(ADMIN_KEY, JSON.stringify(admin));
+}
+
+export function patchAdmin(partial: Partial<AdminInfo>) {
+  const current = getAdmin();
+  if (!current) return;
+  localStorage.setItem(ADMIN_KEY, JSON.stringify({ ...current, ...partial }));
 }
 
 export function clearSession() {
@@ -35,4 +43,13 @@ export function getAdmin(): AdminInfo | null {
 
 export function isLoggedIn(): boolean {
   return Boolean(getToken());
+}
+
+export function hasPerm(perm: string): boolean {
+  const admin = getAdmin();
+  const perms = admin?.permissions || [];
+  if (perms.includes("*") || perms.includes(perm)) return true;
+  // Legacy sessions before permissions were persisted: superadmin can do all
+  if ((!perms.length || perms.length === 0) && admin?.role === "superadmin") return true;
+  return false;
 }

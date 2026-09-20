@@ -2,7 +2,7 @@ import { Button, Card, Checkbox, Form, Input, Typography } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { login } from "../api/auth";
+import { fetchMe, login } from "../api/auth";
 import { isLoggedIn, setSession } from "../auth/session";
 import SparkLogo from "../components/SparkLogo";
 import WaveBg from "../components/WaveBg";
@@ -24,6 +24,17 @@ export default function LoginPage() {
     try {
       const data = await login(values.username, values.password);
       setSession(data.access_token, data.admin);
+      try {
+        const me = await fetchMe();
+        setSession(data.access_token, {
+          ...data.admin,
+          display_name: me.display_name || data.admin.display_name,
+          role: me.role || data.admin.role,
+          permissions: me.permissions || [],
+        });
+      } catch {
+        // permissions optional for first paint; layout will refresh /me
+      }
       navigate("/", { replace: true });
     } catch (err: unknown) {
       const msg =

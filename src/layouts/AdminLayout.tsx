@@ -13,7 +13,8 @@ import type { MenuProps } from "antd";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SparkLogo from "../components/SparkLogo";
-import { clearSession, getAdmin } from "../auth/session";
+import { fetchMe } from "../api/auth";
+import { clearSession, getAdmin, patchAdmin } from "../auth/session";
 import { useTheme } from "../theme/ThemeProvider";
 import { APP_MENU_TREE, menuByPath, openKeysForPath } from "./menu";
 import PageTabs from "./PageTabs";
@@ -41,6 +42,20 @@ export default function AdminLayout() {
     onChange();
     media.addEventListener("change", onChange);
     return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    fetchMe()
+      .then((me) => {
+        patchAdmin({
+          display_name: me.display_name,
+          role: me.role,
+          permissions: me.permissions || [],
+        });
+      })
+      .catch(() => {
+        /* keep cached profile */
+      });
   }, []);
 
   useEffect(() => {

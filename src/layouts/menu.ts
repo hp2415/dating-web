@@ -78,7 +78,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "真人认证",
         icon: IdcardOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "人脸 / 实名认证队列，对齐信任模型里的认证推进。",
       },
       {
@@ -87,7 +87,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "信任档案",
         icon: SafetyCertificateOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "四轴信用与公开凭证预览，对应 TrustBehaviorModel。",
       },
     ],
@@ -103,7 +103,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "活动列表",
         icon: CalendarOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "场：发现货架、主办改期、名额与候补；审核见「内容审核」。",
       },
       {
@@ -112,7 +112,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "发现货架",
         icon: AppstoreOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "猜你喜欢 / Hero / 分区轨配置，对齐活动 Tab App Store 节奏。",
       },
     ],
@@ -128,7 +128,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "同好（免费）",
         icon: TeamOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "找人玩 · 免费路径：打招呼、邀约去某场。",
       },
       {
@@ -137,7 +137,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "陪玩（预约）",
         icon: ShopOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "找人玩 · 预约路径：档期、定价、排行榜与服务者治理。",
       },
       {
@@ -196,7 +196,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "订单中心",
         icon: BankOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "活动参加订单 + 陪玩预约订单、退款入口。",
       },
       {
@@ -205,7 +205,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "钱包与退款",
         icon: WalletOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "演示支付流水、退款策略与异常单。",
       },
       {
@@ -229,6 +229,22 @@ export const APP_MENU_TREE: AppMenuNode[] = [
     ],
   },
   {
+    key: "messaging-group",
+    title: "消息关系",
+    icon: SoundOutlined,
+    children: [
+      {
+        key: "conversations",
+        path: "/conversations",
+        title: "会话只读",
+        icon: SoundOutlined,
+        closable: true,
+        status: "live",
+        blurb: "会话元数据；消息体在云 IM。",
+      },
+    ],
+  },
+  {
     key: "safety-group",
     title: "安全治理",
     icon: AlertOutlined,
@@ -248,8 +264,17 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "拉黑与限流",
         icon: SafetyCertificateOutlined,
         closable: true,
-        status: "preview",
-        blurb: "封禁、限流、恶意识举报权重预留。",
+        status: "live",
+        blurb: "封禁、限流制裁；已接 /admin/v1/sanctions。",
+      },
+      {
+        key: "safety-sensitive",
+        path: "/safety/sensitive-words",
+        title: "敏感词",
+        icon: FileProtectOutlined,
+        closable: true,
+        status: "live",
+        blurb: "敏感词库维护；命中动作 warn / block。",
       },
     ],
   },
@@ -264,7 +289,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "城市与兴趣",
         icon: TagsOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "开放域兴趣 / 城市字典，避免写死少数场景磁贴。",
       },
       {
@@ -273,8 +298,17 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "通知推送",
         icon: NotificationOutlined,
         closable: true,
-        status: "preview",
-        blurb: "活动提醒、预约深链推送模板。",
+        status: "live",
+        blurb: "推送任务 stub：发送写入站内信。",
+      },
+      {
+        key: "config-announcements",
+        path: "/config/announcements",
+        title: "公告与反馈",
+        icon: NotificationOutlined,
+        closable: true,
+        status: "live",
+        blurb: "公告发布 + 意见反馈工单。",
       },
       {
         key: "config-sms",
@@ -363,7 +397,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   "users-verification": {
     title: "真人认证",
     blurb: "人脸 / 实名认证队列，对齐信任模型里的认证推进。",
-    status: "preview",
+    status: "live",
     iosRef: "Features/Trust · 去认证",
     metrics: [
       { label: "待审", value: 3 },
@@ -385,7 +419,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   "users-trust": {
     title: "信任档案",
     blurb: "四轴信用与公开凭证预览，对应 TrustBehaviorModel。",
-    status: "preview",
+    status: "live",
     iosRef: "Docs/TrustBehaviorModel · TrustPublicPreviewView",
     metrics: [
       { label: "Safety 偏低", value: 4 },
@@ -403,12 +437,12 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { name: "林夏", safety: "高", fulfill: "高", contrib: "中", badge: "真人 · 准时达人" },
       { name: "何安", safety: "中", fulfill: "中", contrib: "低", badge: "新人" },
     ],
-    nextApis: ["GET /admin/v1/trust/profiles", "GET /admin/v1/trust/events"],
+    nextApis: ["GET /admin/v1/trust/scores", "GET /admin/v1/trust/events"],
   },
   activities: {
     title: "活动列表",
     blurb: "场：发现货架、主办改期、名额与候补。",
-    status: "preview",
+    status: "live",
     iosRef: "Features/Activities · 发现 / 详情 / 主办",
     metrics: [
       { label: "进行中", value: "—" },
@@ -426,12 +460,12 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { title: "夜骑滨江", city: "杭州", category: "运动", cap: "6/12", status: "已发布" },
       { title: "周末市集探店", city: "上海", category: "线下", cap: "3/8", status: "待审" },
     ],
-    nextApis: ["GET /admin/v1/activities（已有审核）", "运营检索 / 强制下架"],
+    nextApis: ["GET /admin/v1/activities"],
   },
   "activities-shelves": {
     title: "发现货架",
     blurb: "猜你喜欢 / Hero / 分区轨配置。",
-    status: "preview",
+    status: "live",
     iosRef: "ActivitiesView · App Store Today 货架",
     metrics: [
       { label: "Hero 位", value: 1 },
@@ -448,12 +482,12 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { shelf: "猜你喜欢", strategy: "兴趣 + 附近", city: "全国", status: "草稿" },
       { shelf: "周末精选 Hero", strategy: "人工精选", city: "上海", status: "草稿" },
     ],
-    nextApis: ["GET/PUT /admin/v1/ops/shelves"],
+    nextApis: ["GET/PUT /admin/v1/discover-shelves"],
   },
   "buddies-free": {
     title: "同好（免费）",
     blurb: "找人玩 · 免费路径：打招呼、邀约去某场。",
-    status: "preview",
+    status: "live",
     iosRef: "BuddiesProductPlan · 免费分段",
     metrics: [
       { label: "在线意图", value: 18 },
@@ -470,12 +504,12 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { name: "阿哲", intent: "今晚打球", dist: "1.2km", status: "刚活跃" },
       { name: "小满", intent: "周末徒步", dist: "3.4km", status: "推荐" },
     ],
-    nextApis: ["GET /admin/v1/buddies?kind=free"],
+    nextApis: ["GET /admin/v1/buddy-intents"],
   },
   "buddies-paid": {
     title: "陪玩（预约）",
     blurb: "档期、定价、排行榜与服务者治理。",
-    status: "preview",
+    status: "live",
     iosRef: "BuddiesProductPlan · 预约分段",
     metrics: [
       { label: "在架服务者", value: 26 },
@@ -493,7 +527,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { name: "教练阿凯", skill: "篮球 · 线下", price: "¥128/时", cert: "已认证", status: "可约" },
       { name: "语音陪聊 Mira", skill: "聊天", price: "¥38/时", cert: "审核中", status: "下架" },
     ],
-    nextApis: ["GET /admin/v1/buddies?kind=paid", "服务者上下架"],
+    nextApis: ["GET /admin/v1/companions", "POST /admin/v1/companions/{id}/review"],
   },
   circles: {
     title: "兴趣圈子",
@@ -561,7 +595,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   orders: {
     title: "订单中心",
     blurb: "活动参加订单 + 陪玩预约订单。",
-    status: "preview",
+    status: "live",
     iosRef: "Profile · 订单列表",
     metrics: [
       { label: "今日成交", value: "¥—" },
@@ -584,7 +618,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   wallet: {
     title: "钱包与退款",
     blurb: "演示支付流水、退款策略与异常单。",
-    status: "preview",
+    status: "live",
     iosRef: "WalletStore · RefundFlow",
     metrics: [
       { label: "退款申请", value: 2 },
@@ -601,7 +635,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { id: "W9001", user: "何安", dir: "退款", amount: "¥49", status: "处理中" },
       { id: "W9002", user: "林夏", dir: "支付", amount: "¥128", status: "成功" },
     ],
-    nextApis: ["GET /admin/v1/wallet/ledger", "POST /admin/v1/refunds/{id}/resolve"],
+    nextApis: ["GET /admin/v1/wallet/ledger", "POST /admin/v1/refunds/{id}/process"],
   },
   credentials: {
     title: "履约凭证",
@@ -666,8 +700,8 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   },
   "safety-blocks": {
     title: "拉黑与限流",
-    blurb: "封禁、限流、恶意识举报权重预留。",
-    status: "preview",
+    blurb: "封禁、限流制裁；已接 /admin/v1/sanctions。",
+    status: "live",
     iosRef: "blocks API · Trust Safety 轴",
     metrics: [
       { label: "封禁中", value: "—" },
@@ -684,10 +718,36 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
     ],
     nextApis: ["GET /admin/v1/sanctions"],
   },
+  "safety-sensitive": {
+    title: "敏感词",
+    blurb: "敏感词库维护。",
+    status: "live",
+    iosRef: "内容安全横切",
+    columns: [
+      { title: "词", dataIndex: "word" },
+      { title: "分类", dataIndex: "category" },
+      { title: "动作", dataIndex: "action" },
+    ],
+    rows: [],
+    nextApis: ["GET/POST /admin/v1/sensitive-words"],
+  },
+  conversations: {
+    title: "会话只读",
+    blurb: "会话元数据；消息体在云 IM。",
+    status: "live",
+    iosRef: "消息 Tab · 会话列表",
+    columns: [
+      { title: "标题", dataIndex: "title" },
+      { title: "类型", dataIndex: "kind" },
+      { title: "成员", dataIndex: "members" },
+    ],
+    rows: [],
+    nextApis: ["GET /admin/v1/conversations"],
+  },
   "config-taxonomy": {
     title: "城市与兴趣",
     blurb: "开放域兴趣 / 城市字典。",
-    status: "preview",
+    status: "live",
     iosRef: "InterestTaxonomy · Buddies 开放域",
     metrics: [
       { label: "兴趣标签", value: 48 },
@@ -703,12 +763,12 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { type: "兴趣", name: "夜跑", weight: 10, status: "启用" },
       { type: "城市", name: "杭州", weight: 9, status: "启用" },
     ],
-    nextApis: ["GET/PUT /admin/v1/ops/taxonomy"],
+    nextApis: ["GET/POST /admin/v1/taxonomies"],
   },
   "config-push": {
     title: "通知推送",
-    blurb: "活动提醒、预约深链推送模板。",
-    status: "preview",
+    blurb: "推送任务 stub：发送写入站内信。",
+    status: "live",
     iosRef: "NotificationService · 深链",
     metrics: [
       { label: "模板数", value: 6 },
@@ -724,7 +784,19 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
       { name: "活动开始前提醒", scene: "活动", channel: "Push", status: "草稿" },
       { name: "预约即将开始", scene: "陪玩", channel: "Push", status: "草稿" },
     ],
-    nextApis: ["GET/PUT /admin/v1/ops/push-templates"],
+    nextApis: ["GET/POST /admin/v1/push-campaigns"],
+  },
+  "config-announcements": {
+    title: "公告与反馈",
+    blurb: "公告发布 + 意见反馈工单。",
+    status: "live",
+    iosRef: "运营横切",
+    columns: [
+      { title: "标题", dataIndex: "title" },
+      { title: "状态", dataIndex: "status" },
+    ],
+    rows: [],
+    nextApis: ["GET /admin/v1/announcements", "GET /admin/v1/feedbacks"],
   },
   "config-sms": {
     title: "短信通道",

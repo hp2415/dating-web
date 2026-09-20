@@ -69,30 +69,35 @@ const QUICK_LINKS = [
     desc: "场 · 发现与主办",
     to: "/activities",
     icon: <CalendarOutlined />,
+    live: true,
   },
   {
     title: "陪玩服务者",
     desc: "搭子 · 预约路径",
     to: "/buddies/paid",
     icon: <TeamOutlined />,
+    live: true,
   },
   {
     title: "订单中心",
     desc: "活动 + 预约履约",
     to: "/orders",
     icon: <WalletOutlined />,
+    live: true,
   },
   {
     title: "信任档案",
-    desc: "四轴信用预览",
+    desc: "分数 · 事件 · 加减分",
     to: "/users/trust",
     icon: <SafetyCertificateOutlined />,
+    live: true,
   },
   {
     title: "城市与兴趣",
     desc: "开放域字典",
     to: "/config/taxonomy",
     icon: <TeamOutlined />,
+    live: true,
   },
 ];
 
@@ -222,7 +227,7 @@ export default function DashboardPage() {
                 "优先清空活动待审，保证「场」信息流新鲜度",
                 "举报工单按 Safety 权重处理，再看内容贡献",
                 "陪玩上架前核验真人认证与定价合规",
-                "货架 / 兴趣字典仍为预览，可先定运营口径",
+                "货架 / 兴趣字典已可配置，按城市灰度上架",
               ]}
               renderItem={(text) => <List.Item>{text}</List.Item>}
             />
