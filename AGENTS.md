@@ -14,20 +14,20 @@ Spark 运营后台（React 18 + Vite + Ant Design 5）。视觉参考 Skyroc 的
 
 | 路由 | 状态 |
 |------|------|
-| `/login` · `/` · `/moderation` | Live |
+| `/login` · `/` · `/moderation` | Live（含统一审核队列） |
 | `/orders` · `/wallet` | Live（订单 / 退款 / 流水 / 对账） |
 | `/buddies/paid` · `/buddies/free` | Live（陪玩审核 · 同好意图） |
-| `/users/trust` · `/users/verification` | Live（信任分 · 真人认证） |
+| `/users` · `/users/trust` · `/users/verification` | Live（用户列表/详情 · 信任分 · 真人认证） |
 | `/safety/reports` · `/safety/blocks` · `/safety/sensitive-words` | Live |
-| `/activities` · `/activities/shelves` · `/community` | Live |
+| `/activities` · `/activities/shelves` · `/community` | Live（货架含选品排序） |
 | `/config/taxonomy` · `/config/push` · `/config/announcements` | Live |
 | `/conversations` | Live（会话 / 好友 / 打招呼 / 转账 / 通话） |
-| `/users` · 圈子 · 语音厅 · 凭证 · 会员 · 短信 · 设置 | 预览占位（后端尚无对应 admin 列表） |
+| 圈子 · 语音厅 · 凭证 · 会员 · 短信 · 设置 | 预览占位（后端尚无对应 admin 列表） |
 
 菜单树在 `src/layouts/menu.ts`（`status: live | preview`）。新 Live 页：加 leaf + `App.tsx` 路由 + `api/*`；预览页只加 leaf + `PREVIEW_SPECS`。
 
 ## 和后端
 
-改审核、仪表盘、用户管理时，先确认 `dating-backend` 已有对应 `/admin/v1` 路由。不要为了页面假造成功响应。用户列表等仍缺 API 的保持预览。
+改审核、仪表盘、用户管理时，先确认 `dating-backend` 已有对应 `/admin/v1` 路由。不要为了页面假造成功响应。
 
 服务器目录名是 `dating-admin-web`，发版见 [docs/OPS.md](./docs/OPS.md)。

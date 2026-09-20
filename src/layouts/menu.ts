@@ -69,7 +69,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         title: "用户列表",
         icon: TeamOutlined,
         closable: true,
-        status: "preview",
+        status: "live",
         blurb: "账号、资料完善度、城市与兴趣；对应 App「我的」身份行。",
       },
       {
@@ -183,7 +183,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
     icon: AuditOutlined,
     closable: true,
     status: "live",
-    blurb: "活动 / 举报 / 媒体 / 历史动态（已接 /admin/v1）。",
+    blurb: "统一队列 + 活动 / 举报 / 媒体 / 历史动态（已接 /admin/v1）。",
   },
   {
     key: "commerce-group",

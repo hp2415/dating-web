@@ -100,3 +100,46 @@ export function upsertSensitiveWord(body: {
 }) {
   return unwrap(api.post("/admin/v1/sensitive-words", body));
 }
+
+export type ModerationTaskItem = {
+  id: string;
+  target_kind: string;
+  target_id: string;
+  submitted_at?: string | null;
+  machine_label?: string;
+  machine_result?: Record<string, unknown>;
+  status: string;
+  assignee_admin_id?: string | null;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  reason_code?: string | null;
+  admin_note?: string | null;
+  priority?: number;
+  payload?: Record<string, unknown>;
+};
+
+export type ReasonCodeItem = { code: string; label: string };
+
+export function fetchModerationTasks(params: {
+  status?: string;
+  target_kind?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  return unwrap(api.get("/admin/v1/moderation-tasks", { params }));
+}
+
+export function claimModerationTask(id: string) {
+  return unwrap(api.post(`/admin/v1/moderation-tasks/${id}/claim`));
+}
+
+export function reviewModerationTask(
+  id: string,
+  body: { action: "approve" | "reject"; reason_code?: string; admin_note?: string },
+) {
+  return unwrap(api.post(`/admin/v1/moderation-tasks/${id}/review`, body));
+}
+
+export function fetchModerationReasonCodes() {
+  return unwrap(api.get("/admin/v1/moderation/reason-codes"));
+}

@@ -100,6 +100,22 @@ export function addShelfItem(
   return unwrap(api.post(`/admin/v1/discover-shelves/${shelfId}/items`, body));
 }
 
+export function fetchShelfItems(shelfId: string) {
+  return unwrap(api.get(`/admin/v1/discover-shelves/${shelfId}/items`));
+}
+
+export function updateShelfItem(
+  shelfId: string,
+  itemId: string,
+  body: { subject_kind: string; subject_id: string; sort_order?: number; pinned?: boolean },
+) {
+  return unwrap(api.put(`/admin/v1/discover-shelves/${shelfId}/items/${itemId}`, body));
+}
+
+export function deleteShelfItem(shelfId: string, itemId: string) {
+  return unwrap(api.delete(`/admin/v1/discover-shelves/${shelfId}/items/${itemId}`));
+}
+
 export function fetchAnnouncements() {
   return unwrap(api.get("/admin/v1/announcements"));
 }

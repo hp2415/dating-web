@@ -14,6 +14,7 @@ import {
   message,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import Can from "../components/Can";
 import {
   fetchActivities,
   fetchCommunityPosts,
@@ -28,6 +29,14 @@ import {
   type MediaItem,
   type ReportItem,
 } from "../api/moderation";
+import {
+  claimModerationTask,
+  fetchModerationReasonCodes,
+  fetchModerationTasks,
+  reviewModerationTask,
+  type ModerationTaskItem,
+  type ReasonCodeItem,
+} from "../api/trust";
 
 const REASON_LABEL: Record<string, string> = {
   spam: "垃圾信息",
@@ -55,6 +64,7 @@ export default function ModerationPage() {
       </Typography.Paragraph>
       <Tabs
         items={[
+          { key: "tasks", label: "统一队列", children: <ModerationTasksPanel /> },
           { key: "activities", label: "活动审核", children: <ActivitiesPanel /> },
           { key: "reports", label: "举报工单", children: <ReportsPanel /> },
           { key: "media", label: "媒体审核", children: <MediaPanel /> },
@@ -117,6 +127,7 @@ function ReportsPanel() {
       key: "action",
       render: (_, row) =>
         row.status === "pending" ? (
+          <Can perm="report:write">
           <Button
             type="link"
             onClick={() => {
@@ -128,6 +139,7 @@ function ReportsPanel() {
           >
             处置
           </Button>
+          </Can>
         ) : (
           <Typography.Text type="secondary">{row.resolution || "-"}</Typography.Text>
         ),
@@ -244,6 +256,7 @@ function MediaPanel() {
       key: "action",
       render: (_, row) =>
         row.audit_status === "pending" ? (
+          <Can perm="media:review">
           <Space>
             <Button type="link" onClick={() => onReview(row.id, "approve")}>
               通过
@@ -252,6 +265,7 @@ function MediaPanel() {
               驳回
             </Button>
           </Space>
+          </Can>
         ) : (
           "-"
         ),
@@ -348,6 +362,7 @@ function CommunityPanel() {
       key: "action",
       render: (_, row) =>
         row.status === "pending" ? (
+          <Can perm="community:review">
           <Space>
             <Button type="link" onClick={() => onReview(row.id, "approve")}>
               通过
@@ -356,6 +371,7 @@ function CommunityPanel() {
               驳回
             </Button>
           </Space>
+          </Can>
         ) : (
           "-"
         ),
@@ -464,6 +480,7 @@ function ActivitiesPanel() {
       key: "action",
       render: (_, row) =>
         row.status === "pending" ? (
+          <Can perm="activity:review">
           <Space>
             <Button type="link" onClick={() => onReview(row.id, "approve")}>
               通过
@@ -472,6 +489,7 @@ function ActivitiesPanel() {
               驳回
             </Button>
           </Space>
+          </Can>
         ) : (
           "-"
         ),
@@ -496,6 +514,175 @@ function ActivitiesPanel() {
       </Space>
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
       <Table rowKey="id" loading={loading} columns={columns} dataSource={items} pagination={false} />
+    </>
+  );
+}
+
+function ModerationTasksPanel() {
+  const [items, setItems] = useState<ModerationTaskItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("pending");
+  const [reasonCodes, setReasonCodes] = useState<ReasonCodeItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const limit = 20;
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetchModerationTasks({ status: status === "all" ? undefined : status, limit, offset })
+      .then((d: { items?: ModerationTaskItem[]; total?: number }) => {
+        setItems(d.items || []);
+        setTotal(d.total ?? 0);
+      })
+      .catch((e: Error) => message.error(e.message))
+      .finally(() => setLoading(false));
+  }, [status, offset]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    fetchModerationReasonCodes()
+      .then((d: { items?: ReasonCodeItem[] }) => setReasonCodes(d.items || []))
+      .catch(() => setReasonCodes([]));
+  }, []);
+
+  const onReview = (row: ModerationTaskItem, action: "approve" | "reject") => {
+    if (action === "approve") {
+      reviewModerationTask(row.id, { action: "approve" })
+        .then(() => {
+          message.success("已通过");
+          load();
+        })
+        .catch((e: Error) => message.error(e.message));
+      return;
+    }
+    let reasonCode = reasonCodes[0]?.code || "other";
+    let note = "";
+    Modal.confirm({
+      title: "驳回任务",
+      content: (
+        <Space direction="vertical" style={{ width: "100%", marginTop: 12 }}>
+          <Select
+            defaultValue={reasonCode}
+            style={{ width: "100%" }}
+            options={reasonCodes.map((c) => ({ value: c.code, label: c.label }))}
+            onChange={(v) => {
+              reasonCode = v;
+            }}
+          />
+          <Input.TextArea
+            rows={3}
+            placeholder="备注（可选）"
+            onChange={(e) => {
+              note = e.target.value;
+            }}
+          />
+        </Space>
+      ),
+      onOk: async () => {
+        if (!reasonCode) {
+          message.error("请选择驳回原因码");
+          throw new Error("missing reason");
+        }
+        await reviewModerationTask(row.id, {
+          action: "reject",
+          reason_code: reasonCode,
+          admin_note: note || undefined,
+        });
+        message.success("已驳回");
+        load();
+      },
+    });
+  };
+
+  const columns: ColumnsType<ModerationTaskItem> = [
+    { title: "类型", dataIndex: "target_kind", width: 100 },
+    { title: "对象", dataIndex: "target_id", ellipsis: true },
+    { title: "机审", dataIndex: "machine_label", width: 90 },
+    {
+      title: "优先级",
+      dataIndex: "priority",
+      width: 80,
+      render: (v) => v ?? 0,
+    },
+    {
+      title: "状态",
+      dataIndex: "status",
+      width: 110,
+      render: (v) => <Tag color={v === "pending" ? "orange" : v === "reviewing" ? "blue" : "default"}>{v}</Tag>,
+    },
+    { title: "提交", dataIndex: "submitted_at", width: 180 },
+    {
+      title: "操作",
+      width: 220,
+      render: (_, row) => (
+        <Can perm="moderation:write">
+          <Space>
+            {(row.status === "pending" || !row.assignee_admin_id) && (
+              <Button
+                size="small"
+                onClick={() =>
+                  claimModerationTask(row.id)
+                    .then(() => {
+                      message.success("已认领");
+                      load();
+                    })
+                    .catch((e: Error) => message.error(e.message))
+                }
+              >
+                认领
+              </Button>
+            )}
+            {row.status !== "approved" && row.status !== "rejected" && (
+              <>
+                <Button size="small" type="primary" onClick={() => onReview(row, "approve")}>
+                  通过
+                </Button>
+                <Button size="small" danger onClick={() => onReview(row, "reject")}>
+                  驳回
+                </Button>
+              </>
+            )}
+          </Space>
+        </Can>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <Space style={{ marginBottom: 16 }}>
+        <Select
+          value={status}
+          style={{ width: 160 }}
+          onChange={(v) => {
+            setOffset(0);
+            setStatus(v);
+          }}
+          options={[
+            { value: "pending", label: "待审" },
+            { value: "reviewing", label: "审核中" },
+            { value: "approved", label: "已通过" },
+            { value: "rejected", label: "已驳回" },
+            { value: "all", label: "全部" },
+          ]}
+        />
+        <Button onClick={load}>刷新</Button>
+      </Space>
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={items}
+        pagination={{
+          current: Math.floor(offset / limit) + 1,
+          pageSize: limit,
+          total,
+          onChange: (page) => setOffset((page - 1) * limit),
+        }}
+      />
     </>
   );
 }

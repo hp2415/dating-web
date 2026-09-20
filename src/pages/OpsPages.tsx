@@ -6,6 +6,9 @@ import {
   createAnnouncement,
   createCampaign,
   createShelf,
+  addShelfItem,
+  updateShelfItem,
+  deleteShelfItem,
   fetchAnnouncements,
   fetchCampaigns,
   fetchFeedbacks,
@@ -137,6 +140,8 @@ export function ShelvesPage() {
   const [items, setItems] = useState<ShelfItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
+  const [editing, setEditing] = useState<ShelfItem | null>(null);
+  const [itemForm] = Form.useForm();
 
   const load = () => {
     setLoading(true);
@@ -150,10 +155,17 @@ export function ShelvesPage() {
     load();
   }, []);
 
+  const reloadEditing = async (shelfId: string) => {
+    const list = (await fetchShelves()) as { items?: ShelfItem[] };
+    const next = (list.items || []).find((s) => s.id === shelfId) || null;
+    setEditing(next);
+    setItems(list.items || []);
+  };
+
   return (
     <PageShell
       title="发现货架"
-      desc="Hero / 轨 / 网格布局配置。规则引擎可视化后续迭代。"
+      desc="Hero / 轨 / 网格布局配置。选品决定 App 活动 Tab 首屏。"
       extra={
         <Can perm="config:write">
           <Button
@@ -222,9 +234,171 @@ export function ShelvesPage() {
             width: 80,
             render: (_, r) => (r.items || []).length,
           },
+          {
+            title: "操作",
+            width: 100,
+            render: (_, row) => (
+              <Button type="link" size="small" onClick={() => setEditing(row)}>
+                选品
+              </Button>
+            ),
+          },
         ]}
         pagination={false}
       />
+
+      <Modal
+        title={editing ? `选品 · ${editing.title}` : "选品"}
+        open={!!editing}
+        onCancel={() => setEditing(null)}
+        footer={null}
+        width={720}
+        destroyOnClose
+      >
+        {editing && (
+          <>
+            <Can perm="config:write">
+              <Space style={{ marginBottom: 12 }} wrap>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    itemForm.resetFields();
+                    itemForm.setFieldsValue({ subject_kind: "activity", sort_order: 0, pinned: false });
+                    Modal.confirm({
+                      title: "添加条目",
+                      content: (
+                        <Form form={itemForm} layout="vertical" style={{ marginTop: 16 }}>
+                          <Form.Item name="subject_kind" label="类型" rules={[{ required: true }]}>
+                            <Select
+                              options={[
+                                { value: "activity", label: "活动" },
+                                { value: "post", label: "动态" },
+                                { value: "user", label: "用户" },
+                              ]}
+                            />
+                          </Form.Item>
+                          <Form.Item name="subject_id" label="对象 ID" rules={[{ required: true }]}>
+                            <Input placeholder="UUID" />
+                          </Form.Item>
+                          <Form.Item name="sort_order" label="排序">
+                            <Input type="number" />
+                          </Form.Item>
+                          <Form.Item name="pinned" label="置顶" valuePropName="checked">
+                            <Switch />
+                          </Form.Item>
+                        </Form>
+                      ),
+                      onOk: async () => {
+                        const v = await itemForm.validateFields();
+                        v.sort_order = Number(v.sort_order || 0);
+                        await addShelfItem(editing.id, v);
+                        message.success("已添加");
+                        await reloadEditing(editing.id);
+                      },
+                    });
+                  }}
+                >
+                  添加条目
+                </Button>
+              </Space>
+            </Can>
+            <Table
+              size="small"
+              rowKey="id"
+              pagination={false}
+              dataSource={[...(editing.items || [])].sort(
+                (a, b) => Number(b.pinned) - Number(a.pinned) || a.sort_order - b.sort_order,
+              )}
+              columns={[
+                { title: "类型", dataIndex: "subject_kind", width: 90 },
+                { title: "对象 ID", dataIndex: "subject_id", ellipsis: true },
+                { title: "排序", dataIndex: "sort_order", width: 70 },
+                {
+                  title: "置顶",
+                  dataIndex: "pinned",
+                  width: 70,
+                  render: (v: boolean) => (v ? "是" : "否"),
+                },
+                {
+                  title: "操作",
+                  width: 200,
+                  render: (_, row) => {
+                    const sorted = [...(editing.items || [])].sort(
+                      (a, b) => Number(b.pinned) - Number(a.pinned) || a.sort_order - b.sort_order,
+                    );
+                    const idx = sorted.findIndex((x) => x.id === row.id);
+                    return (
+                      <Can perm="config:write">
+                        <Space>
+                          <Button
+                            size="small"
+                            disabled={idx <= 0}
+                            onClick={async () => {
+                              const prev = sorted[idx - 1];
+                              if (!prev) return;
+                              await updateShelfItem(editing.id, row.id, {
+                                subject_kind: row.subject_kind,
+                                subject_id: row.subject_id,
+                                sort_order: prev.sort_order,
+                                pinned: row.pinned,
+                              });
+                              await updateShelfItem(editing.id, prev.id, {
+                                subject_kind: prev.subject_kind,
+                                subject_id: prev.subject_id,
+                                sort_order: row.sort_order,
+                                pinned: prev.pinned,
+                              });
+                              message.success("已上移");
+                              await reloadEditing(editing.id);
+                            }}
+                          >
+                            上移
+                          </Button>
+                          <Button
+                            size="small"
+                            disabled={idx < 0 || idx >= sorted.length - 1}
+                            onClick={async () => {
+                              const next = sorted[idx + 1];
+                              if (!next) return;
+                              await updateShelfItem(editing.id, row.id, {
+                                subject_kind: row.subject_kind,
+                                subject_id: row.subject_id,
+                                sort_order: next.sort_order,
+                                pinned: row.pinned,
+                              });
+                              await updateShelfItem(editing.id, next.id, {
+                                subject_kind: next.subject_kind,
+                                subject_id: next.subject_id,
+                                sort_order: row.sort_order,
+                                pinned: next.pinned,
+                              });
+                              message.success("已下移");
+                              await reloadEditing(editing.id);
+                            }}
+                          >
+                            下移
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            onClick={async () => {
+                              await deleteShelfItem(editing.id, row.id);
+                              message.success("已删除");
+                              await reloadEditing(editing.id);
+                            }}
+                          >
+                            删除
+                          </Button>
+                        </Space>
+                      </Can>
+                    );
+                  },
+                },
+              ]}
+            />
+          </>
+        )}
+      </Modal>
     </PageShell>
   );
 }
