@@ -1,20 +1,29 @@
-import { Button, Card, Form, Input, Typography, message } from "antd";
+import { Button, Card, Checkbox, Form, Input, Typography } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { login } from "../api/auth";
-import { setSession } from "../auth/session";
+import { isLoggedIn, setSession } from "../auth/session";
+import SparkLogo from "../components/SparkLogo";
+import WaveBg from "../components/WaveBg";
+import { PRIMARY, palette } from "../theme/color";
+import { useTheme } from "../theme/ThemeProvider";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { darkMode, toggleScheme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [form] = Form.useForm<{ username: string; password: string }>();
+
+  if (isLoggedIn()) {
+    return <Navigate to="/" replace />;
+  }
 
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
       const data = await login(values.username, values.password);
       setSession(data.access_token, data.admin);
-      message.success("登录成功");
       navigate("/", { replace: true });
     } catch (err: unknown) {
       const msg =
@@ -22,37 +31,48 @@ export default function LoginPage() {
           ?.message ||
         (err as Error)?.message ||
         "登录失败";
-      message.error(msg);
+      form.setFields([{ name: "password", errors: [msg] }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "grid",
-        placeItems: "center",
-        padding: 24,
-      }}
-    >
-      <Card style={{ width: 420, boxShadow: "0 18px 50px rgba(15,23,42,0.08)" }}>
-        <Typography.Title level={2} style={{ marginBottom: 4 }}>
-          Spark Admin
+    <div className="login-page">
+      <WaveBg themeColor={darkMode ? palette(PRIMARY, 600) : PRIMARY} />
+      <Card className="login-card" bordered={false}>
+        <header className="login-header">
+          <SparkLogo className="login-logo" />
+          <Typography.Title level={3} className="login-title">
+            Spark Admin
+          </Typography.Title>
+          <Button type="text" size="small" onClick={toggleScheme}>
+            {darkMode ? "浅色" : "深色"}
+          </Button>
+        </header>
+        <Typography.Title level={4} className="login-subtitle">
+          账号密码登录
         </Typography.Title>
-        <Typography.Paragraph type="secondary">
-          运营管理后台（账号密码登录，默认管理员已预置）
-        </Typography.Paragraph>
-        <Form layout="vertical" onFinish={onFinish} initialValues={{ username: "admin" }}>
-          <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
-            <Input prefix={<UserOutlined />} placeholder="admin" size="large" />
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{ username: "admin", password: "Admin@123456", remember: true }}
+        >
+          <Form.Item name="username" rules={[{ required: true, message: "请输入用户名" }]}>
+            <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
           </Form.Item>
-          <Form.Item name="password" label="密码" rules={[{ required: true, message: "请输入密码" }]}>
-            <Input.Password prefix={<LockOutlined />} placeholder="Admin@123456" size="large" />
+          <Form.Item name="password" rules={[{ required: true, message: "请输入密码" }]}>
+            <Input.Password prefix={<LockOutlined />} placeholder="密码" size="large" />
           </Form.Item>
-          <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-            登录
+          <div className="login-row">
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox>记住我</Checkbox>
+            </Form.Item>
+            <Typography.Text type="secondary">默认账号已预置</Typography.Text>
+          </div>
+          <Button type="primary" htmlType="submit" block size="large" shape="round" loading={loading}>
+            确认
           </Button>
         </Form>
       </Card>

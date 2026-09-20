@@ -1,6 +1,6 @@
 # Spark Admin Web
 
-React + TypeScript + Ant Design 运营后台骨架。
+React + TypeScript + Ant Design 运营后台。界面壳参考 [Skyroc Admin](https://admin.skyroc.me/)：波浪登录页、侧栏布局、Chrome 页签、浅色/深色主题。业务接口仍走本仓库 FastAPI。
 
 ## 默认账号（后端启动自动种子）
 
@@ -35,6 +35,7 @@ docker compose up -d --build admin
 
 ## 已实现
 
-- 登录页 / 鉴权会话
-- 侧栏布局（工作台、用户、审核、设置占位）
+- Skyroc 风格登录页 / 鉴权会话 / 深浅色切换
+- 侧栏、面包屑、Chrome 页签、工作台指标卡
+- 内容审核（活动 / 举报 / 媒体 / 历史动态）
 - 调用 `/admin/v1/auth/login`、`/auth/me`、`/dashboard/summary`

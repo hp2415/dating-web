@@ -46,8 +46,10 @@ const RESOLUTION_OPTIONS = [
 
 export default function ModerationPage() {
   return (
-    <div>
-      <Typography.Title level={3}>内容审核</Typography.Title>
+    <div className="card-wrapper moderation-page">
+      <Typography.Title level={4} className="page-title">
+        内容审核
+      </Typography.Title>
       <Typography.Paragraph type="secondary">
         找搭子运营审核：活动为主，举报/媒体/历史动态并行处理。
       </Typography.Paragraph>
