@@ -71,7 +71,6 @@ export default function LoginPage() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ username: "admin", password: "Admin@123456", remember: true }}
         >
           <Form.Item name="username" rules={[{ required: true, message: "请输入用户名" }]}>
             <Input prefix={<UserOutlined />} placeholder="用户名" size="large" />
@@ -83,7 +82,6 @@ export default function LoginPage() {
             <Form.Item name="remember" valuePropName="checked" noStyle>
               <Checkbox>记住我</Checkbox>
             </Form.Item>
-            <Typography.Text type="secondary">默认账号已预置</Typography.Text>
           </div>
           <Button type="primary" htmlType="submit" block size="large" shape="round" loading={loading}>
             确认
