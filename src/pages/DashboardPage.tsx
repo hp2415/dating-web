@@ -8,11 +8,48 @@ import {
   TeamOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
-import { Alert, Card, Col, List, Row, Space, Spin, Statistic, Tag, Typography } from "antd";
+import { Column, Line } from "@ant-design/plots";
+import { Alert, Button, Card, Col, DatePicker, List, Row, Space, Spin, Statistic, Tag, Typography } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { fetchDashboard, type DashboardSummary } from "../api/auth";
+import {
+  fetchMetricsFunnel,
+  fetchMetricsOverview,
+  rebuildMetrics,
+  type MetricsFunnel,
+  type MetricsOverview,
+} from "../api/metrics";
 import { getAdmin } from "../auth/session";
+
+const FUNNEL_LABELS: Record<string, string> = {
+  "app.launched": "启动",
+  "auth.login_succeeded": "登录成功",
+  "activity.detail_viewed": "看活动",
+  "activity.join_succeeded": "参加活动",
+  "companion.booking_created": "陪玩下单",
+  "commerce.pay_succeeded": "支付成功",
+};
+
+const CORE_METRICS: Array<{ key: keyof MetricsOverview["totals"]; title: string; money?: boolean }> = [
+  { key: "dau", title: "活跃" },
+  { key: "new_users", title: "新增用户" },
+  { key: "activities_published", title: "发布活动" },
+  { key: "orders_paid", title: "支付订单" },
+  { key: "gmv_cents", title: "GMV", money: true },
+];
+
+function formatChange(value: number | null | undefined) {
+  if (value == null) return "无对比";
+  const percent = Math.round(value * 1000) / 10;
+  return percent > 0 ? `环比 +${percent}%` : `环比 ${percent}%`;
+}
+
+function formatMetric(value: number, money?: boolean) {
+  if (money) return `¥${(value / 100).toFixed(2)}`;
+  return String(value);
+}
 
 const CARD_METRICS: Array<{
   key: keyof DashboardSummary["metrics"];
@@ -121,12 +158,40 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<MetricsOverview | null>(null);
+  const [funnel, setFunnel] = useState<MetricsFunnel | null>(null);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [range, setRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(6, "day"), dayjs()]);
+
+  const loadMetrics = async (nextRange: [Dayjs, Dayjs], rebuildIfEmpty = false) => {
+    setMetricsLoading(true);
+    setMetricsError(null);
+    try {
+      let summary = await fetchMetricsOverview(7);
+      if (rebuildIfEmpty && summary.series.length === 0) {
+        await rebuildMetrics(7);
+        summary = await fetchMetricsOverview(7);
+      }
+      setOverview(summary);
+      setFunnel(
+        await fetchMetricsFunnel(nextRange[0].format("YYYY-MM-DD"), nextRange[1].format("YYYY-MM-DD")),
+      );
+    } catch (err) {
+      setMetricsError(err instanceof Error ? err.message : "统计加载失败");
+    } finally {
+      setMetricsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchDashboard()
       .then(setData)
       .catch((err) => setError(err?.message || "加载失败"))
       .finally(() => setLoading(false));
+    void loadMetrics(range, true);
+    // Initial load only. Date changes go through the picker.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -173,6 +238,42 @@ export default function DashboardPage() {
 
       {error ? <Alert type="warning" showIcon message={`看板接口：${error}（仍可浏览预览菜单）`} /> : null}
       {data?.notice ? <Alert type="info" showIcon message={data.notice} /> : null}
+
+      <Card
+        className="card-wrapper"
+        bordered={false}
+        title="近 7 日核心指标"
+        extra={
+          <Button size="small" loading={metricsLoading} onClick={() => void loadMetrics(range, true)}>
+            重新生成
+          </Button>
+        }
+      >
+        {metricsError ? <Alert type="warning" showIcon message={metricsError} style={{ marginBottom: 16 }} /> : null}
+        <Row gutter={[16, 16]}>
+          {CORE_METRICS.map((item) => (
+            <Col key={item.key} xs={12} md={8} lg={4}>
+              <Statistic
+                title={item.title}
+                value={formatMetric(overview?.totals?.[item.key] ?? 0, item.money)}
+              />
+              <Typography.Text type="secondary">{formatChange(overview?.change?.[item.key])}</Typography.Text>
+            </Col>
+          ))}
+        </Row>
+        <div style={{ marginTop: 16 }}>
+          <Line
+            data={
+              overview?.series?.length
+                ? overview.series.map((point) => ({ day: point.day.slice(5), dau: point.dau }))
+                : [{ day: "暂无", dau: 0 }]
+            }
+            xField="day"
+            yField="dau"
+            height={180}
+          />
+        </div>
+      </Card>
 
       <Row gutter={[16, 16]}>
         {CARD_METRICS.map((item) => {
@@ -227,16 +328,37 @@ export default function DashboardPage() {
           </Card>
         </Col>
         <Col xs={24} lg={10}>
-          <Card className="card-wrapper" bordered={false} title="今日运营建议">
-            <List
-              size="small"
-              dataSource={[
-                "优先清空活动待审，保证「场」信息流新鲜度",
-                "举报工单按 Safety 权重处理，再看内容贡献",
-                "陪玩上架前核验真人认证与定价合规",
-                "货架 / 兴趣字典已可配置，按城市灰度上架",
-              ]}
-              renderItem={(text) => <List.Item>{text}</List.Item>}
+          <Card
+            className="card-wrapper"
+            bordered={false}
+            title="转化漏斗"
+            extra={
+              <DatePicker.RangePicker
+                value={range}
+                allowClear={false}
+                onChange={(value) => {
+                  if (!value || !value[0] || !value[1]) return;
+                  const next: [Dayjs, Dayjs] = [value[0], value[1]];
+                  setRange(next);
+                  void loadMetrics(next);
+                }}
+              />
+            }
+          >
+            {metricsError ? <Alert type="warning" showIcon message={metricsError} /> : null}
+            <Column
+              data={
+                funnel?.steps?.length
+                  ? funnel.steps.map((step) => ({
+                      step: FUNNEL_LABELS[step.event] || step.event,
+                      count: step.count,
+                    }))
+                  : [{ step: "暂无", count: 0 }]
+              }
+              xField="step"
+              yField="count"
+              height={220}
+              axis={{ x: { labelAutoRotate: true } }}
             />
           </Card>
         </Col>

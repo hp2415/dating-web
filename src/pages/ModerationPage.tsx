@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Button,
+  Descriptions,
+  Drawer,
   Image,
   Input,
   Modal,
@@ -19,15 +21,12 @@ import {
   fetchActivities,
   fetchCommunityPosts,
   fetchMedia,
-  fetchReports,
-  resolveReport,
   reviewActivity,
   reviewCommunityPost,
   reviewMedia,
   type ActivityItem,
   type CommunityPostItem,
   type MediaItem,
-  type ReportItem,
 } from "../api/moderation";
 import {
   claimModerationTask,
@@ -38,21 +37,6 @@ import {
   type ReasonCodeItem,
 } from "../api/trust";
 
-const REASON_LABEL: Record<string, string> = {
-  spam: "垃圾信息",
-  harassment: "骚扰",
-  inappropriate: "不当内容",
-  fake: "虚假资料",
-  other: "其他",
-};
-
-const RESOLUTION_OPTIONS = [
-  { value: "dismiss", label: "驳回" },
-  { value: "warn", label: "警告" },
-  { value: "limit", label: "限流" },
-  { value: "ban", label: "封禁" },
-];
-
 export default function ModerationPage() {
   return (
     <div className="card-wrapper moderation-page">
@@ -60,13 +44,13 @@ export default function ModerationPage() {
         内容审核
       </Typography.Title>
       <Typography.Paragraph type="secondary">
-        已接后端：活动为主，举报 / 媒体 / 历史动态并行处理。对齐 iOS 发布待审 → 运营过审 → 信息流。
+        已接后端：活动为主，媒体 / 历史动态并行处理。举报工单请到「安全治理 · 举报处置」。对齐 iOS 发布待审 →
+        运营过审 → 信息流。
       </Typography.Paragraph>
       <Tabs
         items={[
           { key: "tasks", label: "统一队列", children: <ModerationTasksPanel /> },
           { key: "activities", label: "活动审核", children: <ActivitiesPanel /> },
-          { key: "reports", label: "举报工单", children: <ReportsPanel /> },
           { key: "media", label: "媒体审核", children: <MediaPanel /> },
           { key: "posts", label: "历史动态", children: <CommunityPanel /> },
         ]}
@@ -75,139 +59,12 @@ export default function ModerationPage() {
   );
 }
 
-function ReportsPanel() {
-  const [items, setItems] = useState<ReportItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState("pending");
-  const [actingId, setActingId] = useState<string | null>(null);
-  const [note, setNote] = useState("");
-  const [resolution, setResolution] = useState("dismiss");
-  const [open, setOpen] = useState(false);
-  const [current, setCurrent] = useState<ReportItem | null>(null);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    fetchReports(status)
-      .then((data) => setItems(data.items))
-      .catch((err) => setError(err?.message || "加载失败"))
-      .finally(() => setLoading(false));
-  }, [status]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const columns: ColumnsType<ReportItem> = [
-    {
-      title: "举报人",
-      dataIndex: "reporter_name",
-      render: (v, row) => v || row.reporter_id.slice(0, 8),
-    },
-    {
-      title: "被举报人",
-      dataIndex: "target_name",
-      render: (v, row) => v || row.target_user_id.slice(0, 8),
-    },
-    {
-      title: "原因",
-      dataIndex: "reason",
-      render: (v) => REASON_LABEL[v] || v,
-    },
-    { title: "说明", dataIndex: "detail", ellipsis: true },
-    {
-      title: "状态",
-      dataIndex: "status",
-      render: (v) => <Tag color={v === "pending" ? "orange" : "default"}>{v}</Tag>,
-    },
-    { title: "时间", dataIndex: "created_at", width: 180 },
-    {
-      title: "操作",
-      key: "action",
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="report:write">
-          <Button
-            type="link"
-            onClick={() => {
-              setCurrent(row);
-              setResolution("dismiss");
-              setNote("");
-              setOpen(true);
-            }}
-          >
-            处置
-          </Button>
-          </Can>
-        ) : (
-          <Typography.Text type="secondary">{row.resolution || "-"}</Typography.Text>
-        ),
-    },
-  ];
-
-  return (
-    <>
-      <Space style={{ marginBottom: 16 }}>
-        <Select
-          value={status}
-          style={{ width: 160 }}
-          onChange={setStatus}
-          options={[
-            { value: "pending", label: "待处理" },
-            { value: "resolved", label: "已处置" },
-            { value: "dismissed", label: "已驳回" },
-            { value: "all", label: "全部" },
-          ]}
-        />
-        <Button onClick={load}>刷新</Button>
-      </Space>
-      {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={items} pagination={false} />
-      <Modal
-        title="处置举报"
-        open={open}
-        onCancel={() => setOpen(false)}
-        confirmLoading={!!actingId}
-        onOk={async () => {
-          if (!current) return;
-          setActingId(current.id);
-          try {
-            await resolveReport(current.id, resolution, note || undefined);
-            message.success("已处置");
-            setOpen(false);
-            load();
-          } catch (err: unknown) {
-            message.error(err instanceof Error ? err.message : "处置失败");
-          } finally {
-            setActingId(null);
-          }
-        }}
-      >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Select
-            value={resolution}
-            style={{ width: "100%" }}
-            onChange={setResolution}
-            options={RESOLUTION_OPTIONS}
-          />
-          <Input.TextArea
-            rows={3}
-            placeholder="管理员备注（可选）"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </Space>
-      </Modal>
-    </>
-  );
-}
-
 function MediaPanel() {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("pending");
+  const [detail, setDetail] = useState<MediaItem | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -226,6 +83,7 @@ function MediaPanel() {
     try {
       await reviewMedia(id, action);
       message.success(action === "approve" ? "已通过" : "已驳回");
+      setDetail(null);
       load();
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : "审核失败");
@@ -254,21 +112,11 @@ function MediaPanel() {
     {
       title: "操作",
       key: "action",
-      render: (_, row) =>
-        row.audit_status === "pending" ? (
-          <Can perm="media:review">
-          <Space>
-            <Button type="link" onClick={() => onReview(row.id, "approve")}>
-              通过
-            </Button>
-            <Button type="link" danger onClick={() => onReview(row.id, "reject")}>
-              驳回
-            </Button>
-          </Space>
-          </Can>
-        ) : (
-          "-"
-        ),
+      render: (_, row) => (
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
@@ -289,7 +137,50 @@ function MediaPanel() {
         <Button onClick={load}>刷新</Button>
       </Space>
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={items} pagination={false} />
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={items}
+        pagination={false}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
+      />
+      <Drawer
+        width={520}
+        title="媒体详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            {detail.url ? (
+              <Image src={detail.url} style={{ maxWidth: "100%", marginBottom: 16 }} />
+            ) : null}
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="媒体 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="上传者">
+                {detail.owner_name || detail.owner_id}
+              </Descriptions.Item>
+              <Descriptions.Item label="类型">{detail.media_type}</Descriptions.Item>
+              <Descriptions.Item label="状态">{detail.audit_status}</Descriptions.Item>
+              <Descriptions.Item label="时间">{detail.created_at}</Descriptions.Item>
+            </Descriptions>
+            {detail.audit_status === "pending" ? (
+              <Can perm="media:review">
+                <Space style={{ marginTop: 16 }}>
+                  <Button type="primary" onClick={() => onReview(detail.id, "approve")}>
+                    通过
+                  </Button>
+                  <Button danger onClick={() => onReview(detail.id, "reject")}>
+                    驳回
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </>
   );
 }
@@ -299,6 +190,7 @@ function CommunityPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("pending");
+  const [detail, setDetail] = useState<CommunityPostItem | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -317,6 +209,7 @@ function CommunityPanel() {
     try {
       await reviewCommunityPost(id, action);
       message.success(action === "approve" ? "已发布" : "已驳回");
+      setDetail(null);
       load();
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : "审核失败");
@@ -360,21 +253,11 @@ function CommunityPanel() {
     {
       title: "操作",
       key: "action",
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="community:review">
-          <Space>
-            <Button type="link" onClick={() => onReview(row.id, "approve")}>
-              通过
-            </Button>
-            <Button type="link" danger onClick={() => onReview(row.id, "reject")}>
-              驳回
-            </Button>
-          </Space>
-          </Can>
-        ) : (
-          "-"
-        ),
+      render: (_, row) => (
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
@@ -395,7 +278,58 @@ function CommunityPanel() {
         <Button onClick={load}>刷新</Button>
       </Space>
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={items} pagination={false} />
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={items}
+        pagination={false}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
+      />
+      <Drawer
+        width={560}
+        title="动态详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>{detail.content}</Typography.Paragraph>
+            {detail.media?.length ? (
+              <Space wrap style={{ marginBottom: 16 }}>
+                {detail.media.map((m, i) =>
+                  m.url ? (
+                    <Image key={i} src={m.url} width={120} height={120} style={{ objectFit: "cover" }} />
+                  ) : null,
+                )}
+              </Space>
+            ) : null}
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="动态 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="作者">{detail.author_name || detail.author_id}</Descriptions.Item>
+              <Descriptions.Item label="作者 ID">{detail.author_id}</Descriptions.Item>
+              <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
+              {detail.admin_note ? (
+                <Descriptions.Item label="备注">{detail.admin_note}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="时间">{detail.created_at}</Descriptions.Item>
+            </Descriptions>
+            {detail.status === "pending" ? (
+              <Can perm="community:review">
+                <Space style={{ marginTop: 16 }}>
+                  <Button type="primary" onClick={() => onReview(detail.id, "approve")}>
+                    通过
+                  </Button>
+                  <Button danger onClick={() => onReview(detail.id, "reject")}>
+                    驳回
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </>
   );
 }
@@ -405,6 +339,7 @@ function ActivitiesPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("pending");
+  const [detail, setDetail] = useState<ActivityItem | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -423,6 +358,7 @@ function ActivitiesPanel() {
     try {
       await reviewActivity(id, action);
       message.success(action === "approve" ? "活动已发布" : "活动已驳回");
+      setDetail(null);
       load();
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : "审核失败");
@@ -478,21 +414,11 @@ function ActivitiesPanel() {
     {
       title: "操作",
       key: "action",
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="activity:review">
-          <Space>
-            <Button type="link" onClick={() => onReview(row.id, "approve")}>
-              通过
-            </Button>
-            <Button type="link" danger onClick={() => onReview(row.id, "reject")}>
-              驳回
-            </Button>
-          </Space>
-          </Can>
-        ) : (
-          "-"
-        ),
+      render: (_, row) => (
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
@@ -513,7 +439,73 @@ function ActivitiesPanel() {
         <Button onClick={load}>刷新</Button>
       </Space>
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={items} pagination={false} />
+      <Table
+        rowKey="id"
+        loading={loading}
+        columns={columns}
+        dataSource={items}
+        pagination={false}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
+      />
+      <Drawer
+        width={560}
+        title="活动详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            <Typography.Title level={5}>{detail.title}</Typography.Title>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>
+              {detail.description}
+            </Typography.Paragraph>
+            {detail.media?.length ? (
+              <Space wrap style={{ marginBottom: 16 }}>
+                {detail.media.map((m, i) =>
+                  m.url ? (
+                    <Image key={i} src={m.url} width={120} height={120} style={{ objectFit: "cover" }} />
+                  ) : null,
+                )}
+              </Space>
+            ) : null}
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="活动 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="主办">{detail.host_name || detail.host_id}</Descriptions.Item>
+              <Descriptions.Item label="主办 ID">{detail.host_id}</Descriptions.Item>
+              <Descriptions.Item label="分类">{detail.category}</Descriptions.Item>
+              {(detail.city || detail.address) && (
+                <Descriptions.Item label="地点">
+                  {[detail.city, detail.address].filter(Boolean).join(" · ")}
+                </Descriptions.Item>
+              )}
+              {detail.start_at ? (
+                <Descriptions.Item label="开始">{detail.start_at}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="名额">
+                {detail.join_count}/{detail.capacity}
+              </Descriptions.Item>
+              <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
+              {detail.admin_note ? (
+                <Descriptions.Item label="备注">{detail.admin_note}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="创建">{detail.created_at}</Descriptions.Item>
+            </Descriptions>
+            {detail.status === "pending" ? (
+              <Can perm="activity:review">
+                <Space style={{ marginTop: 16 }}>
+                  <Button type="primary" onClick={() => onReview(detail.id, "approve")}>
+                    通过
+                  </Button>
+                  <Button danger onClick={() => onReview(detail.id, "reject")}>
+                    驳回
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </>
   );
 }
@@ -525,6 +517,7 @@ function ModerationTasksPanel() {
   const [reasonCodes, setReasonCodes] = useState<ReasonCodeItem[]>([]);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [detail, setDetail] = useState<ModerationTaskItem | null>(null);
   const limit = 20;
 
   const load = useCallback(() => {
@@ -553,6 +546,7 @@ function ModerationTasksPanel() {
       reviewModerationTask(row.id, { action: "approve" })
         .then(() => {
           message.success("已通过");
+          setDetail(null);
           load();
         })
         .catch((e: Error) => message.error(e.message));
@@ -592,6 +586,7 @@ function ModerationTasksPanel() {
           admin_note: note || undefined,
         });
         message.success("已驳回");
+        setDetail(null);
         load();
       },
     });
@@ -616,40 +611,19 @@ function ModerationTasksPanel() {
     { title: "提交", dataIndex: "submitted_at", width: 180 },
     {
       title: "操作",
-      width: 220,
+      width: 100,
       render: (_, row) => (
-        <Can perm="moderation:write">
-          <Space>
-            {(row.status === "pending" || !row.assignee_admin_id) && (
-              <Button
-                size="small"
-                onClick={() =>
-                  claimModerationTask(row.id)
-                    .then(() => {
-                      message.success("已认领");
-                      load();
-                    })
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                认领
-              </Button>
-            )}
-            {row.status !== "approved" && row.status !== "rejected" && (
-              <>
-                <Button size="small" type="primary" onClick={() => onReview(row, "approve")}>
-                  通过
-                </Button>
-                <Button size="small" danger onClick={() => onReview(row, "reject")}>
-                  驳回
-                </Button>
-              </>
-            )}
-          </Space>
-        </Can>
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
       ),
     },
   ];
+
+  const payloadText =
+    detail?.payload && Object.keys(detail.payload).length
+      ? JSON.stringify(detail.payload, null, 2)
+      : null;
 
   return (
     <>
@@ -682,7 +656,72 @@ function ModerationTasksPanel() {
           total,
           onChange: (page) => setOffset((page - 1) * limit),
         }}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
       />
+      <Drawer
+        width={560}
+        title="审核任务详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="任务 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="类型">{detail.target_kind}</Descriptions.Item>
+              <Descriptions.Item label="对象 ID">{detail.target_id}</Descriptions.Item>
+              {detail.machine_label ? (
+                <Descriptions.Item label="机审">{detail.machine_label}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
+              {detail.assignee_admin_id ? (
+                <Descriptions.Item label="认领人">{detail.assignee_admin_id}</Descriptions.Item>
+              ) : null}
+              {detail.submitted_at ? (
+                <Descriptions.Item label="提交">{detail.submitted_at}</Descriptions.Item>
+              ) : null}
+              {detail.admin_note ? (
+                <Descriptions.Item label="备注">{detail.admin_note}</Descriptions.Item>
+              ) : null}
+            </Descriptions>
+            {payloadText ? (
+              <Typography.Paragraph style={{ marginTop: 16 }}>
+                <pre style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>{payloadText}</pre>
+              </Typography.Paragraph>
+            ) : null}
+            <Can perm="moderation:write">
+              <Space style={{ marginTop: 16 }} wrap>
+                {(detail.status === "pending" || !detail.assignee_admin_id) && (
+                  <Button
+                    onClick={() =>
+                      claimModerationTask(detail.id)
+                        .then(() => {
+                          message.success("已认领");
+                          load();
+                          setDetail({ ...detail, status: "reviewing" });
+                        })
+                        .catch((e: Error) => message.error(e.message))
+                    }
+                  >
+                    认领
+                  </Button>
+                )}
+                {detail.status !== "approved" && detail.status !== "rejected" && (
+                  <>
+                    <Button type="primary" onClick={() => onReview(detail, "approve")}>
+                      通过
+                    </Button>
+                    <Button danger onClick={() => onReview(detail, "reject")}>
+                      驳回
+                    </Button>
+                  </>
+                )}
+              </Space>
+            </Can>
+          </>
+        )}
+      </Drawer>
     </>
   );
 }

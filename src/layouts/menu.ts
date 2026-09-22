@@ -32,6 +32,8 @@ export type AppMenuLeaf = {
   blurb?: string;
   /** 相对后端能力状态 */
   status?: "live" | "preview";
+  /** 菜单可见所需权限；预览页可省略 */
+  perm?: string;
 };
 
 export type AppMenuGroup = {
@@ -56,6 +58,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
     icon: DashboardOutlined,
     closable: false,
     status: "live",
+    perm: "dashboard:read",
     blurb: "运营总览与待办入口",
   },
   {
@@ -70,6 +73,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: TeamOutlined,
         closable: true,
         status: "live",
+        perm: "user:read",
         blurb: "账号、资料完善度、城市与兴趣；对应 App「我的」身份行。",
       },
       {
@@ -79,6 +83,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: IdcardOutlined,
         closable: true,
         status: "live",
+        perm: "trust:read",
         blurb: "人脸 / 实名认证队列，对齐信任模型里的认证推进。",
       },
       {
@@ -88,6 +93,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: SafetyCertificateOutlined,
         closable: true,
         status: "live",
+        perm: "trust:read",
         blurb: "四轴信用与公开凭证预览，对应 TrustBehaviorModel。",
       },
     ],
@@ -104,6 +110,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: CalendarOutlined,
         closable: true,
         status: "live",
+        perm: "activity:read",
         blurb: "场：发现货架、主办改期、名额与候补；审核见「内容审核」。",
       },
       {
@@ -113,6 +120,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: AppstoreOutlined,
         closable: true,
         status: "live",
+        perm: "activity:read",
         blurb: "猜你喜欢 / Hero / 分区轨配置，对齐活动 Tab App Store 节奏。",
       },
     ],
@@ -129,6 +137,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: TeamOutlined,
         closable: true,
         status: "live",
+        perm: "companion:read",
         blurb: "找人玩 · 免费路径：打招呼、邀约去某场。",
       },
       {
@@ -138,6 +147,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: ShopOutlined,
         closable: true,
         status: "live",
+        perm: "companion:read",
         blurb: "找人玩 · 预约路径：档期、定价、排行榜与服务者治理。",
       },
       {
@@ -172,6 +182,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: TrophyOutlined,
         closable: true,
         status: "live",
+        perm: "community:read",
         blurb: "活动种草 / 复盘流；待审也可在「内容审核 · 历史动态」。",
       },
     ],
@@ -183,7 +194,8 @@ export const APP_MENU_TREE: AppMenuNode[] = [
     icon: AuditOutlined,
     closable: true,
     status: "live",
-    blurb: "统一队列 + 活动 / 举报 / 媒体 / 历史动态（已接 /admin/v1）。",
+    perm: "moderation:read",
+    blurb: "统一队列 + 活动 / 媒体 / 历史动态；举报请到「安全治理 · 举报处置」。",
   },
   {
     key: "commerce-group",
@@ -197,6 +209,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: BankOutlined,
         closable: true,
         status: "live",
+        perm: "order:read",
         blurb: "活动参加订单 + 陪玩预约订单、退款入口。",
       },
       {
@@ -206,6 +219,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: WalletOutlined,
         closable: true,
         status: "live",
+        perm: "order:read",
         blurb: "演示支付流水、退款策略与异常单。",
       },
       {
@@ -240,6 +254,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: SoundOutlined,
         closable: true,
         status: "live",
+        perm: "chat:read",
         blurb: "会话 / 好友 / 打招呼 / 转账 / 通话只读；消息体在云 IM。",
       },
     ],
@@ -256,7 +271,8 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: AlertOutlined,
         closable: true,
         status: "live",
-        blurb: "用户举报工单；与「内容审核 · 举报工单」同源。",
+        perm: "report:read",
+        blurb: "用户举报工单（/safety/reports）。",
       },
       {
         key: "safety-blocks",
@@ -265,6 +281,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: SafetyCertificateOutlined,
         closable: true,
         status: "live",
+        perm: "trust:read",
         blurb: "封禁、限流制裁；已接 /admin/v1/sanctions。",
       },
       {
@@ -274,6 +291,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: FileProtectOutlined,
         closable: true,
         status: "live",
+        perm: "trust:read",
         blurb: "敏感词库维护；命中动作 warn / block。",
       },
     ],
@@ -290,6 +308,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: TagsOutlined,
         closable: true,
         status: "live",
+        perm: "config:read",
         blurb: "开放域兴趣 / 城市字典，避免写死少数场景磁贴。",
       },
       {
@@ -299,6 +318,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: NotificationOutlined,
         closable: true,
         status: "live",
+        perm: "config:read",
         blurb: "推送任务 stub：发送写入站内信。",
       },
       {
@@ -308,6 +328,7 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: NotificationOutlined,
         closable: true,
         status: "live",
+        perm: "config:read",
         blurb: "公告发布 + 意见反馈工单。",
       },
       {
@@ -317,18 +338,36 @@ export const APP_MENU_TREE: AppMenuNode[] = [
         icon: NotificationOutlined,
         closable: true,
         status: "live",
+        perm: "config:read",
         blurb: "登录验证码通道与日限额（开发码 123456）。",
       },
     ],
   },
   {
-    key: "settings",
-    path: "/settings",
+    key: "settings-group",
     title: "系统设置",
     icon: SettingOutlined,
-    closable: true,
-    status: "preview",
-    blurb: "管理员账号、角色权限与审计日志预留。",
+    children: [
+      {
+        key: "settings",
+        path: "/settings",
+        title: "管理员",
+        icon: SettingOutlined,
+        closable: true,
+        status: "preview",
+        blurb: "管理员账号与角色权限预留。",
+      },
+      {
+        key: "settings-audit-logs",
+        path: "/settings/audit-logs",
+        title: "审计日志",
+        icon: FileProtectOutlined,
+        closable: true,
+        status: "live",
+        perm: "dashboard:read",
+        blurb: "运营操作审计日志；已接 /admin/v1/audit-logs。",
+      },
+    ],
   },
 ];
 
@@ -826,7 +865,7 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
   },
   settings: {
     title: "系统设置",
-    blurb: "管理员账号、角色权限与审计日志预留。",
+    blurb: "管理员账号与角色权限预留。",
     status: "preview",
     iosRef: "运营横切 · 非 App Tab",
     metrics: [
@@ -841,6 +880,6 @@ export const PREVIEW_SPECS: Record<string, PreviewSpec> = {
     rows: [
       { user: "admin", role: "super_admin", login: "本会话" },
     ],
-    nextApis: ["GET /admin/v1/admins", "审计日志"],
+    nextApis: ["GET /admin/v1/admins", "GET /admin/v1/audit-logs"],
   },
 };

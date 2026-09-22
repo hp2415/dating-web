@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Input, Modal, Select, Space, Table, Tag, message } from "antd";
+import { Button, Descriptions, Drawer, Input, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import PageShell from "../components/PageShell";
 import Can from "../components/Can";
@@ -29,6 +29,7 @@ export default function SafetyReportsPage() {
   const [current, setCurrent] = useState<ReportItem | null>(null);
   const [resolution, setResolution] = useState("dismiss");
   const [note, setNote] = useState("");
+  const [acting, setActing] = useState(false);
   const limit = 20;
 
   const load = useCallback(() => {
@@ -46,6 +47,12 @@ export default function SafetyReportsPage() {
     load();
   }, [load]);
 
+  const openDetail = (row: ReportItem) => {
+    setCurrent(row);
+    setResolution("dismiss");
+    setNote("");
+  };
+
   const columns: ColumnsType<ReportItem> = [
     { title: "举报人", dataIndex: "reporter_name", width: 120, render: (v, r) => v || r.reporter_id },
     { title: "对象", dataIndex: "target_name", width: 120, render: (v, r) => v || r.target_user_id },
@@ -61,29 +68,16 @@ export default function SafetyReportsPage() {
     {
       title: "操作",
       width: 100,
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="report:write">
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => {
-                setCurrent(row);
-                setResolution("dismiss");
-                setNote("");
-              }}
-            >
-              处置
-            </Button>
-          </Can>
-        ) : (
-          row.resolution || "—"
-        ),
+      render: (_, row) => (
+        <Button type="link" onClick={() => openDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
   return (
-    <PageShell title="举报处置" desc="用户举报工单；与「内容审核 · 举报工单」同源 API。">
+    <PageShell title="举报处置" desc="用户举报工单；入口在「安全治理 · 举报处置」。">
       <Space style={{ marginBottom: 12 }}>
         <Select
           value={status}
@@ -111,37 +105,87 @@ export default function SafetyReportsPage() {
           total,
           onChange: (p) => setOffset((p - 1) * limit),
         }}
+        onRow={(row) => ({ onClick: () => openDetail(row), style: { cursor: "pointer" } })}
       />
-      <Modal
+      <Drawer
+        width={520}
+        title="举报详情"
         open={Boolean(current)}
-        title="处置举报"
-        onCancel={() => setCurrent(null)}
-        onOk={() => {
-          if (!current) return;
-          resolveReport(current.id, resolution, note || undefined)
-            .then(() => {
-              message.success("已处置");
-              setCurrent(null);
-              load();
-            })
-            .catch((e: Error) => message.error(e.message));
-        }}
+        onClose={() => setCurrent(null)}
+        destroyOnClose
       >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Select
-            style={{ width: "100%" }}
-            value={resolution}
-            onChange={setResolution}
-            options={RESOLUTION_OPTIONS}
-          />
-          <Input.TextArea
-            rows={3}
-            placeholder="备注（可选）"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-        </Space>
-      </Modal>
+        {current && (
+          <>
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="工单 ID">{current.id}</Descriptions.Item>
+              <Descriptions.Item label="举报人">
+                {current.reporter_name || current.reporter_id}
+              </Descriptions.Item>
+              <Descriptions.Item label="举报人 ID">{current.reporter_id}</Descriptions.Item>
+              <Descriptions.Item label="被举报人">
+                {current.target_name || current.target_user_id}
+              </Descriptions.Item>
+              <Descriptions.Item label="被举报人 ID">{current.target_user_id}</Descriptions.Item>
+              <Descriptions.Item label="原因">
+                {REASON_LABEL[current.reason] || current.reason}
+              </Descriptions.Item>
+              {current.detail ? (
+                <Descriptions.Item label="说明">
+                  <Typography.Paragraph style={{ marginBottom: 0, whiteSpace: "pre-wrap" }}>
+                    {current.detail}
+                  </Typography.Paragraph>
+                </Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="状态">{current.status}</Descriptions.Item>
+              {current.resolution ? (
+                <Descriptions.Item label="处置结果">{current.resolution}</Descriptions.Item>
+              ) : null}
+              {current.admin_note ? (
+                <Descriptions.Item label="管理员备注">{current.admin_note}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="提交">{current.created_at}</Descriptions.Item>
+              {current.resolved_at ? (
+                <Descriptions.Item label="处理时间">{current.resolved_at}</Descriptions.Item>
+              ) : null}
+            </Descriptions>
+            {current.status === "pending" ? (
+              <Can perm="report:write">
+                <Space direction="vertical" style={{ width: "100%", marginTop: 16 }}>
+                  <Select
+                    style={{ width: "100%" }}
+                    value={resolution}
+                    onChange={setResolution}
+                    options={RESOLUTION_OPTIONS}
+                  />
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="备注（可选）"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                  <Button
+                    type="primary"
+                    loading={acting}
+                    onClick={() => {
+                      setActing(true);
+                      resolveReport(current.id, resolution, note || undefined)
+                        .then(() => {
+                          message.success("已处置");
+                          setCurrent(null);
+                          load();
+                        })
+                        .catch((e: Error) => message.error(e.message))
+                        .finally(() => setActing(false));
+                    }}
+                  >
+                    提交处置
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </PageShell>
   );
 }

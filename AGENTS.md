@@ -14,15 +14,20 @@ Spark 运营后台（React 18 + Vite + Ant Design 5）。视觉参考 Skyroc 的
 
 | 路由 | 状态 |
 |------|------|
-| `/login` · `/` · `/moderation` | Live（含统一审核队列） |
+| `/login` · `/` | Live（工作台含指标与漏斗） |
 | `/orders` · `/wallet` | Live（订单 / 退款 / 流水 / 对账） |
 | `/buddies/paid` · `/buddies/free` | Live（陪玩审核 · 同好意图） |
-| `/users` · `/users/trust` · `/users/verification` | Live（用户列表/详情 · 信任分 · 真人认证） |
+| `/users/trust` · `/users/verification` | Live（信任分 · 真人认证） |
 | `/safety/reports` · `/safety/blocks` · `/safety/sensitive-words` | Live |
-| `/activities` · `/activities/shelves` · `/community` | Live（货架含选品排序） |
+| `/activities` · `/activities/shelves` · `/community` | Live（列表行打开审核详情抽屉，不离开当前页） |
+| `/moderation` | Live（活动 / 媒体 / 动态抽屉；举报只留在 `/safety/reports`） |
+| `/users` | Live（详情里可「限制 / 封禁」，需 `sanction:write`） |
+| `/settings/audit-logs` | Live（`GET /admin/v1/audit-logs`，权限 `dashboard:read`） |
 | `/config/taxonomy` · `/config/push` · `/config/announcements` · `/config/sms` | Live |
 | `/conversations` | Live（会话 / 好友 / 打招呼 / 转账 / 通话） |
-| 圈子 · 语音厅 · 凭证 · 会员 · 设置 | 预览占位（后端尚无对应 admin 列表） |
+| 圈子 · 语音厅 · 凭证 · 会员 · 其他设置 | 预览占位 |
+
+菜单 leaf 带可选 `perm`。侧栏按权限过滤；无权限直链由 `PermGuard` 显示 403。`*` 与 `superadmin` 放行。
 
 菜单树在 `src/layouts/menu.ts`（`status: live | preview`）。新 Live 页：加 leaf + `App.tsx` 路由 + `api/*`；预览页只加 leaf + `PREVIEW_SPECS`。
 

@@ -4,6 +4,7 @@ import {
   Descriptions,
   Drawer,
   Input,
+  Modal,
   Select,
   Space,
   Table,
@@ -28,6 +29,7 @@ import {
   revealUserPhone,
   type AdminUserItem,
 } from "../api/users";
+import { createSanction } from "../api/trust";
 
 export default function UsersPage() {
   const [items, setItems] = useState<AdminUserItem[]>([]);
@@ -241,6 +243,75 @@ function UserDetailDrawer({
                 }
               >
                 重置头像
+              </Button>
+            </Can>
+            <Can perm="sanction:write">
+              <Button
+                onClick={() => {
+                  let reason = "";
+                  Modal.confirm({
+                    title: "确认限制该用户？",
+                    content: (
+                      <Input.TextArea
+                        rows={3}
+                        placeholder="原因（必填）"
+                        onChange={(e) => {
+                          reason = e.target.value;
+                        }}
+                      />
+                    ),
+                    onOk: async () => {
+                      if (!reason.trim()) {
+                        message.error("请填写原因");
+                        throw new Error("missing reason");
+                      }
+                      await createSanction({
+                        user_id: user.id,
+                        kind: "mute",
+                        reason: reason.trim(),
+                        scope: "global",
+                      });
+                      message.success("已限制（禁言）");
+                      onRefresh();
+                    },
+                  });
+                }}
+              >
+                限制
+              </Button>
+              <Button
+                danger
+                onClick={() => {
+                  let reason = "";
+                  Modal.confirm({
+                    title: "确认封禁该用户？",
+                    content: (
+                      <Input.TextArea
+                        rows={3}
+                        placeholder="原因（必填）"
+                        onChange={(e) => {
+                          reason = e.target.value;
+                        }}
+                      />
+                    ),
+                    onOk: async () => {
+                      if (!reason.trim()) {
+                        message.error("请填写原因");
+                        throw new Error("missing reason");
+                      }
+                      await createSanction({
+                        user_id: user.id,
+                        kind: "ban",
+                        reason: reason.trim(),
+                        scope: "global",
+                      });
+                      message.success("已封禁");
+                      onRefresh();
+                    },
+                  });
+                }}
+              >
+                封禁
               </Button>
             </Can>
           </Space>

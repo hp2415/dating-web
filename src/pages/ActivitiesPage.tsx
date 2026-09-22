@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Select, Space, Table, Tag, message } from "antd";
+import { Button, Descriptions, Drawer, Image, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import PageShell from "../components/PageShell";
 import Can from "../components/Can";
@@ -11,6 +11,7 @@ export default function ActivitiesPage() {
   const [status, setStatus] = useState("all");
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [detail, setDetail] = useState<ActivityItem | null>(null);
   const limit = 20;
 
   const load = useCallback(() => {
@@ -28,6 +29,16 @@ export default function ActivitiesPage() {
     load();
   }, [load]);
 
+  const onReview = (id: string, action: "approve" | "reject") => {
+    reviewActivity(id, action, action === "reject" ? "不符合规范" : undefined)
+      .then(() => {
+        message.success(action === "approve" ? "已通过" : "已驳回");
+        setDetail(null);
+        load();
+      })
+      .catch((e: Error) => message.error(e.message));
+  };
+
   const columns: ColumnsType<ActivityItem> = [
     { title: "标题", dataIndex: "title", ellipsis: true },
     { title: "主办", dataIndex: "host_name", width: 120, render: (v, r) => v || r.host_id },
@@ -42,42 +53,12 @@ export default function ActivitiesPage() {
     { title: "创建", dataIndex: "created_at", width: 180 },
     {
       title: "操作",
-      width: 160,
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="activity:review">
-            <Space>
-              <Button
-                size="small"
-                type="primary"
-                onClick={() =>
-                  reviewActivity(row.id, "approve")
-                    .then(() => {
-                      message.success("已通过");
-                      load();
-                    })
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                通过
-              </Button>
-              <Button
-                size="small"
-                danger
-                onClick={() =>
-                  reviewActivity(row.id, "reject", "不符合规范")
-                    .then(() => {
-                      message.success("已驳回");
-                      load();
-                    })
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                驳回
-              </Button>
-            </Space>
-          </Can>
-        ) : null,
+      width: 100,
+      render: (_, row) => (
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
@@ -112,7 +93,67 @@ export default function ActivitiesPage() {
           total,
           onChange: (p) => setOffset((p - 1) * limit),
         }}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
       />
+      <Drawer
+        width={560}
+        title="活动详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            <Typography.Title level={5}>{detail.title}</Typography.Title>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>
+              {detail.description}
+            </Typography.Paragraph>
+            {detail.media?.length ? (
+              <Space wrap style={{ marginBottom: 16 }}>
+                {detail.media.map((m, i) =>
+                  m.url ? (
+                    <Image key={i} src={m.url} width={120} height={120} style={{ objectFit: "cover" }} />
+                  ) : null,
+                )}
+              </Space>
+            ) : null}
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="活动 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="主办">{detail.host_name || detail.host_id}</Descriptions.Item>
+              <Descriptions.Item label="主办 ID">{detail.host_id}</Descriptions.Item>
+              <Descriptions.Item label="分类">{detail.category}</Descriptions.Item>
+              {(detail.city || detail.address) && (
+                <Descriptions.Item label="地点">
+                  {[detail.city, detail.address].filter(Boolean).join(" · ")}
+                </Descriptions.Item>
+              )}
+              {detail.start_at ? (
+                <Descriptions.Item label="开始">{detail.start_at}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="名额">
+                {detail.join_count}/{detail.capacity}
+              </Descriptions.Item>
+              <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
+              {detail.admin_note ? (
+                <Descriptions.Item label="备注">{detail.admin_note}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="创建">{detail.created_at}</Descriptions.Item>
+            </Descriptions>
+            {detail.status === "pending" ? (
+              <Can perm="activity:review">
+                <Space style={{ marginTop: 16 }}>
+                  <Button type="primary" onClick={() => onReview(detail.id, "approve")}>
+                    通过
+                  </Button>
+                  <Button danger onClick={() => onReview(detail.id, "reject")}>
+                    驳回
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </PageShell>
   );
 }

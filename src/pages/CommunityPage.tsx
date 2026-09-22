@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, Image, Select, Space, Table, Tag, message } from "antd";
+import { Button, Descriptions, Drawer, Image, Select, Space, Table, Tag, Typography, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import PageShell from "../components/PageShell";
 import Can from "../components/Can";
@@ -15,6 +15,7 @@ export default function CommunityPage() {
   const [status, setStatus] = useState("all");
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
+  const [detail, setDetail] = useState<CommunityPostItem | null>(null);
   const limit = 20;
 
   const load = useCallback(() => {
@@ -31,6 +32,16 @@ export default function CommunityPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const onReview = (id: string, action: "approve" | "reject") => {
+    reviewCommunityPost(id, action, action === "reject" ? "不符合规范" : undefined)
+      .then(() => {
+        message.success(action === "approve" ? "已通过" : "已驳回");
+        setDetail(null);
+        load();
+      })
+      .catch((e: Error) => message.error(e.message));
+  };
 
   const columns: ColumnsType<CommunityPostItem> = [
     { title: "作者", dataIndex: "author_name", width: 120, render: (v, r) => v || r.author_id },
@@ -49,42 +60,12 @@ export default function CommunityPage() {
     { title: "创建", dataIndex: "created_at", width: 180 },
     {
       title: "操作",
-      width: 160,
-      render: (_, row) =>
-        row.status === "pending" ? (
-          <Can perm="community:review">
-            <Space>
-              <Button
-                size="small"
-                type="primary"
-                onClick={() =>
-                  reviewCommunityPost(row.id, "approve")
-                    .then(() => {
-                      message.success("已通过");
-                      load();
-                    })
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                通过
-              </Button>
-              <Button
-                size="small"
-                danger
-                onClick={() =>
-                  reviewCommunityPost(row.id, "reject", "不符合规范")
-                    .then(() => {
-                      message.success("已驳回");
-                      load();
-                    })
-                    .catch((e: Error) => message.error(e.message))
-                }
-              >
-                驳回
-              </Button>
-            </Space>
-          </Can>
-        ) : null,
+      width: 100,
+      render: (_, row) => (
+        <Button type="link" onClick={() => setDetail(row)}>
+          详情
+        </Button>
+      ),
     },
   ];
 
@@ -118,7 +99,55 @@ export default function CommunityPage() {
           total,
           onChange: (p) => setOffset((p - 1) * limit),
         }}
+        onRow={(row) => ({ onClick: () => setDetail(row), style: { cursor: "pointer" } })}
       />
+      <Drawer
+        width={560}
+        title="动态详情"
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        destroyOnClose
+      >
+        {detail && (
+          <>
+            <Typography.Paragraph style={{ whiteSpace: "pre-wrap" }}>{detail.content}</Typography.Paragraph>
+            {detail.media?.length ? (
+              <Space wrap style={{ marginBottom: 16 }}>
+                {detail.media.map((m, i) =>
+                  m.url ? (
+                    <Image key={i} src={m.url} width={120} height={120} style={{ objectFit: "cover" }} />
+                  ) : null,
+                )}
+              </Space>
+            ) : null}
+            <Descriptions column={1} size="small" bordered>
+              <Descriptions.Item label="动态 ID">{detail.id}</Descriptions.Item>
+              <Descriptions.Item label="作者">{detail.author_name || detail.author_id}</Descriptions.Item>
+              <Descriptions.Item label="作者 ID">{detail.author_id}</Descriptions.Item>
+              <Descriptions.Item label="状态">{detail.status}</Descriptions.Item>
+              <Descriptions.Item label="赞 / 评">
+                {detail.like_count} / {detail.comment_count}
+              </Descriptions.Item>
+              {detail.admin_note ? (
+                <Descriptions.Item label="备注">{detail.admin_note}</Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="创建">{detail.created_at}</Descriptions.Item>
+            </Descriptions>
+            {detail.status === "pending" ? (
+              <Can perm="community:review">
+                <Space style={{ marginTop: 16 }}>
+                  <Button type="primary" onClick={() => onReview(detail.id, "approve")}>
+                    通过
+                  </Button>
+                  <Button danger onClick={() => onReview(detail.id, "reject")}>
+                    驳回
+                  </Button>
+                </Space>
+              </Can>
+            ) : null}
+          </>
+        )}
+      </Drawer>
     </PageShell>
   );
 }

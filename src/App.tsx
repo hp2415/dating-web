@@ -26,6 +26,7 @@ import CommunityPage from "./pages/CommunityPage";
 import SafetyReportsPage from "./pages/SafetyReportsPage";
 import UsersPage from "./pages/UsersPage";
 import SmsConfigPage from "./pages/SmsConfigPage";
+import AuditLogsPage from "./pages/AuditLogsPage";
 import { APP_MENUS } from "./layouts/menu";
 import { isLoggedIn } from "./auth/session";
 
@@ -58,6 +59,7 @@ const LIVE_PATHS = new Set([
   "/conversations",
   "/community",
   "/safety/reports",
+  "/settings/audit-logs",
 ]);
 
 const previewRoutes = APP_MENUS.filter(
@@ -97,6 +99,7 @@ export default function App() {
           <Route path="conversations" element={<ConversationsPage />} />
           <Route path="community" element={<CommunityPage />} />
           <Route path="safety/reports" element={<SafetyReportsPage />} />
+          <Route path="settings/audit-logs" element={<AuditLogsPage />} />
           {previewRoutes.map((item) => (
             <Route
               key={item.key}

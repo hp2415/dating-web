@@ -14,17 +14,42 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SparkLogo from "../components/SparkLogo";
 import { fetchMe } from "../api/auth";
-import { clearSession, getAdmin, patchAdmin } from "../auth/session";
+import { clearSession, getAdmin, hasPerm, patchAdmin, type AdminInfo } from "../auth/session";
 import { useTheme } from "../theme/ThemeProvider";
-import { APP_MENU_TREE, menuByPath, openKeysForPath } from "./menu";
+import { APP_MENU_TREE, menuByPath, openKeysForPath, type AppMenuLeaf, type AppMenuNode } from "./menu";
 import PageTabs from "./PageTabs";
+import PermGuard from "../components/PermGuard";
 
 const MOBILE_QUERY = "(max-width: 992px)";
+
+function leafVisible(leaf: AppMenuLeaf, admin: AdminInfo | null): boolean {
+  if (!leaf.perm) return true;
+  const perms = admin?.permissions;
+  // Not yet loaded from /me — keep menu usable (esp. superadmin demos).
+  if (perms === undefined) return true;
+  if (admin?.role === "superadmin" || perms.includes("*")) return true;
+  return hasPerm(leaf.perm);
+}
+
+function filterMenuTree(tree: AppMenuNode[], admin: AdminInfo | null): AppMenuNode[] {
+  const out: AppMenuNode[] = [];
+  for (const node of tree) {
+    if ("children" in node) {
+      const children = node.children.filter((c) => leafVisible(c, admin));
+      if (children.length) {
+        out.push({ ...node, children });
+      }
+    } else if (leafVisible(node, admin)) {
+      out.push(node);
+    }
+  }
+  return out;
+}
 
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const admin = getAdmin();
+  const [admin, setAdmin] = useState<AdminInfo | null>(() => getAdmin());
   const { darkMode, toggleScheme } = useTheme();
   const current = menuByPath(location.pathname);
   const [collapsed, setCollapsed] = useState(false);
@@ -47,14 +72,17 @@ export default function AdminLayout() {
   useEffect(() => {
     fetchMe()
       .then((me) => {
-        patchAdmin({
+        const next = {
           display_name: me.display_name,
           role: me.role,
           permissions: me.permissions || [],
-        });
+        };
+        patchAdmin(next);
+        setAdmin(getAdmin());
       })
       .catch(() => {
         /* keep cached profile */
+        setAdmin(getAdmin());
       });
   }, []);
 
@@ -93,29 +121,29 @@ export default function AdminLayout() {
     }
   };
 
-  const menuItems: MenuProps["items"] = useMemo(
-    () =>
-      APP_MENU_TREE.map((node) => {
-        if ("children" in node) {
-          return {
-            key: node.key,
-            icon: <node.icon />,
-            label: node.title,
-            children: node.children.map((child) => ({
-              key: child.key,
-              icon: <child.icon />,
-              label: <Link to={child.path}>{child.title}</Link>,
-            })),
-          };
-        }
+  const permKey = admin?.permissions?.join(",") ?? (admin?.permissions === undefined ? "undef" : "");
+  const menuItems: MenuProps["items"] = useMemo(() => {
+    const filtered = filterMenuTree(APP_MENU_TREE, admin);
+    return filtered.map((node) => {
+      if ("children" in node) {
         return {
           key: node.key,
           icon: <node.icon />,
-          label: <Link to={node.path}>{node.title}</Link>,
+          label: node.title,
+          children: node.children.map((child) => ({
+            key: child.key,
+            icon: <child.icon />,
+            label: <Link to={child.path}>{child.title}</Link>,
+          })),
         };
-      }),
-    [],
-  );
+      }
+      return {
+        key: node.key,
+        icon: <node.icon />,
+        label: <Link to={node.path}>{node.title}</Link>,
+      };
+    });
+  }, [admin, permKey, admin?.role]);
 
   const breadcrumbItems = [
     { title: <Link to="/">首页</Link> },
@@ -219,7 +247,9 @@ export default function AdminLayout() {
 
         <main className="admin-content">
           <div className="page-enter" key={`${location.pathname}-${reloadKey}`}>
-            <Outlet />
+            <PermGuard>
+              <Outlet />
+            </PermGuard>
           </div>
         </main>
 
