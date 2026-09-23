@@ -43,6 +43,17 @@ export async function login(username: string, password: string) {
   return data.data;
 }
 
+export async function changePassword(oldPassword: string, newPassword: string) {
+  const { data } = await api.post<ApiEnvelope<{ changed: boolean }>>("/admin/v1/auth/password", {
+    old_password: oldPassword,
+    new_password: newPassword,
+  });
+  if (data.code !== 0) {
+    throw new Error(data.message || "修改密码失败");
+  }
+  return data.data;
+}
+
 export async function fetchMe() {
   const { data } = await api.get<ApiEnvelope<MeResult>>("/admin/v1/auth/me");
   if (data.code !== 0) {

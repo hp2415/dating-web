@@ -8,12 +8,12 @@ import {
   ReloadOutlined,
   SunOutlined,
 } from "@ant-design/icons";
-import { Breadcrumb, Button, Dropdown, Menu, Modal } from "antd";
+import { Breadcrumb, Button, Dropdown, Form, Input, Menu, Modal, message } from "antd";
 import type { MenuProps } from "antd";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import SparkLogo from "../components/SparkLogo";
-import { fetchMe } from "../api/auth";
+import { changePassword, fetchMe } from "../api/auth";
 import { clearSession, getAdmin, hasPerm, patchAdmin, type AdminInfo } from "../auth/session";
 import { useTheme } from "../theme/ThemeProvider";
 import { APP_MENU_TREE, menuByPath, openKeysForPath, type AppMenuLeaf, type AppMenuNode } from "./menu";
@@ -56,6 +56,9 @@ export default function AdminLayout() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
   const [fullscreen, setFullscreen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordForm] = Form.useForm<{ old_password: string; new_password: string; confirm: string }>();
   const [openKeys, setOpenKeys] = useState<string[]>(() => openKeysForPath(location.pathname));
 
   useEffect(() => {
@@ -99,6 +102,27 @@ export default function AdminLayout() {
   }, [location.pathname, collapsed, isMobile]);
 
   const siderWidth = collapsed ? 64 : 232;
+
+  const submitPassword = async () => {
+    const values = await passwordForm.validateFields();
+    setPasswordSaving(true);
+    try {
+      await changePassword(values.old_password, values.new_password);
+      message.success("密码已更新，请重新登录");
+      setPasswordOpen(false);
+      passwordForm.resetFields();
+      clearSession();
+      navigate("/login", { replace: true });
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err as Error)?.message ||
+        "修改密码失败";
+      passwordForm.setFields([{ name: "old_password", errors: [msg] }]);
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
 
   const logout = () => {
     Modal.confirm({
@@ -223,6 +247,11 @@ export default function AdminLayout() {
               menu={{
                 items: [
                   {
+                    key: "password",
+                    label: "修改密码",
+                    onClick: () => setPasswordOpen(true),
+                  },
+                  {
                     key: "logout",
                     icon: <LogoutOutlined />,
                     label: "退出登录",
@@ -254,6 +283,51 @@ export default function AdminLayout() {
         </main>
 
         <footer className="admin-footer">Spark Admin · 让一起玩，变得简单、自然、可信</footer>
+        <Modal
+          title="修改密码"
+          open={passwordOpen}
+          okText="保存"
+          cancelText="取消"
+          confirmLoading={passwordSaving}
+          onOk={() => void submitPassword()}
+          onCancel={() => {
+            setPasswordOpen(false);
+            passwordForm.resetFields();
+          }}
+          destroyOnClose
+        >
+          <Form form={passwordForm} layout="vertical" requiredMark={false}>
+            <Form.Item name="old_password" label="原密码" rules={[{ required: true, message: "请输入原密码" }]}>
+              <Input.Password autoComplete="current-password" />
+            </Form.Item>
+            <Form.Item
+              name="new_password"
+              label="新密码"
+              rules={[
+                { required: true, message: "请输入新密码" },
+                { min: 8, message: "至少 8 位" },
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item
+              name="confirm"
+              label="确认新密码"
+              dependencies={["new_password"]}
+              rules={[
+                { required: true, message: "请再次输入新密码" },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue("new_password") === value) return Promise.resolve();
+                    return Promise.reject(new Error("两次输入不一致"));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
     </div>
   );
