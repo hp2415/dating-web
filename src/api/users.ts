@@ -14,6 +14,12 @@ export type AdminUserItem = {
   bio?: string;
   tags?: string[];
   completion_score?: number;
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  occupation?: string | null;
+  meet_radius?: string | null;
+  mbti?: string | null;
+  zodiac?: string | null;
   avatar_media_id?: string | null;
   created_at?: string | null;
   last_active_at?: string | null;

@@ -326,6 +326,15 @@ function UserDetailDrawer({
                     <Descriptions.Item label="状态">{user.status}</Descriptions.Item>
                     <Descriptions.Item label="城市">{user.city || "—"}</Descriptions.Item>
                     <Descriptions.Item label="完善度">{user.completion_score ?? 0}%</Descriptions.Item>
+                    <Descriptions.Item label="身高 / 体重">
+                      {user.height_cm ? `${user.height_cm} cm` : "—"} / {user.weight_kg ? `${user.weight_kg} kg` : "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="身份 / 见面">
+                      {user.occupation || "—"} / {user.meet_radius || "—"}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="MBTI / 星座（自填）">
+                      {user.mbti || "—"} / {user.zodiac || "—"}
+                    </Descriptions.Item>
                     <Descriptions.Item label="信任">
                       {user.trust_level || "—"} / {user.trust_score ?? "—"}
                     </Descriptions.Item>
