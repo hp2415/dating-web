@@ -4,8 +4,12 @@ export type ReportItem = {
   id: string;
   reporter_id: string;
   reporter_name?: string | null;
-  target_user_id: string;
+  target_user_id?: string | null;
   target_name?: string | null;
+  target_kind?: string;
+  target_id?: string | null;
+  target_title?: string;
+  target_exists?: boolean | null;
   reason: string;
   detail?: string | null;
   status: string;
@@ -40,10 +44,10 @@ async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<T>
   return data.data;
 }
 
-export function fetchReports(status = "pending", limit = 50, offset = 0) {
+export function fetchReports(status = "pending", limit = 50, offset = 0, target_kind?: string) {
   return unwrap(
     api.get<ApiEnvelope<Paged<ReportItem>>>("/admin/v1/reports", {
-      params: { status, limit, offset },
+      params: { status, limit, offset, target_kind: target_kind || undefined },
     }),
   );
 }

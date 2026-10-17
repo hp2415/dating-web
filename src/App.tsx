@@ -23,10 +23,19 @@ import {
 import ActivitiesPage from "./pages/ActivitiesPage";
 import ConversationsPage from "./pages/ConversationsPage";
 import CommunityPage from "./pages/CommunityPage";
+import ClubsPage from "./pages/ClubsPage";
 import SafetyReportsPage from "./pages/SafetyReportsPage";
 import UsersPage from "./pages/UsersPage";
 import SmsConfigPage from "./pages/SmsConfigPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import AnalyticsOverviewPage from "./pages/analytics/AnalyticsOverviewPage";
+import AnalyticsFunnelPage from "./pages/analytics/AnalyticsFunnelPage";
+import AnalyticsUsagePage from "./pages/analytics/AnalyticsUsagePage";
+import AnalyticsObjectsPage from "./pages/analytics/AnalyticsObjectsPage";
+import AnalyticsHealthPage from "./pages/analytics/AnalyticsHealthPage";
+import AnalyticsEventsPage from "./pages/analytics/AnalyticsEventsPage";
+import AdminAccountsPage from "./pages/AdminAccountsPage";
+import LaunchReadinessPage from "./pages/LaunchReadinessPage";
 import { APP_MENUS } from "./layouts/menu";
 import { isLoggedIn } from "./auth/session";
 
@@ -59,7 +68,16 @@ const LIVE_PATHS = new Set([
   "/conversations",
   "/community",
   "/safety/reports",
+  "/clubs",
   "/settings/audit-logs",
+  "/settings",
+  "/settings/launch",
+  "/analytics",
+  "/analytics/funnel",
+  "/analytics/usage",
+  "/analytics/objects",
+  "/analytics/health",
+  "/analytics/events",
 ]);
 
 const previewRoutes = APP_MENUS.filter(
@@ -98,8 +116,17 @@ export default function App() {
           <Route path="config/sms" element={<SmsConfigPage />} />
           <Route path="conversations" element={<ConversationsPage />} />
           <Route path="community" element={<CommunityPage />} />
+          <Route path="clubs" element={<ClubsPage />} />
           <Route path="safety/reports" element={<SafetyReportsPage />} />
           <Route path="settings/audit-logs" element={<AuditLogsPage />} />
+          <Route path="settings" element={<AdminAccountsPage />} />
+          <Route path="settings/launch" element={<LaunchReadinessPage />} />
+          <Route path="analytics" element={<AnalyticsOverviewPage />} />
+          <Route path="analytics/funnel" element={<AnalyticsFunnelPage />} />
+          <Route path="analytics/usage" element={<AnalyticsUsagePage />} />
+          <Route path="analytics/objects" element={<AnalyticsObjectsPage />} />
+          <Route path="analytics/health" element={<AnalyticsHealthPage />} />
+          <Route path="analytics/events" element={<AnalyticsEventsPage />} />
           {previewRoutes.map((item) => (
             <Route
               key={item.key}

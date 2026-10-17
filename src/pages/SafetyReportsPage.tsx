@@ -13,8 +13,13 @@ const REASON_LABEL: Record<string, string> = {
   other: "其他",
 };
 
+const KIND_LABEL: Record<string, string> = {
+  user: "用户", post: "动态", activity: "活动", conversation: "会话", club: "俱乐部", guild: "工会",
+};
+
 const RESOLUTION_OPTIONS = [
   { value: "dismiss", label: "驳回" },
+  { value: "takedown", label: "下架内容" },
   { value: "warn", label: "警告" },
   { value: "limit", label: "限流" },
   { value: "ban", label: "封禁" },
@@ -24,6 +29,7 @@ export default function SafetyReportsPage() {
   const [items, setItems] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("pending");
+  const [kind, setKind] = useState<string | undefined>();
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [current, setCurrent] = useState<ReportItem | null>(null);
@@ -34,14 +40,14 @@ export default function SafetyReportsPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    fetchReports(status, limit, offset)
+    fetchReports(status, limit, offset, kind)
       .then((d) => {
         setItems(d.items || []);
         setTotal(d.total ?? 0);
       })
       .catch((e: Error) => message.error(e.message))
       .finally(() => setLoading(false));
-  }, [status, offset]);
+  }, [status, offset, kind]);
 
   useEffect(() => {
     load();
@@ -55,7 +61,11 @@ export default function SafetyReportsPage() {
 
   const columns: ColumnsType<ReportItem> = [
     { title: "举报人", dataIndex: "reporter_name", width: 120, render: (v, r) => v || r.reporter_id },
-    { title: "对象", dataIndex: "target_name", width: 120, render: (v, r) => v || r.target_user_id },
+    { title: "类型", dataIndex: "target_kind", width: 80, render: (k: string) => <Tag>{KIND_LABEL[k] || k || "用户"}</Tag> },
+    {
+      title: "对象", width: 160, ellipsis: true,
+      render: (_, r) => r.target_title || r.target_name || r.target_user_id || r.target_id || "-",
+    },
     {
       title: "原因",
       dataIndex: "reason",
@@ -92,6 +102,14 @@ export default function SafetyReportsPage() {
             { value: "all", label: "全部" },
           ]}
         />
+        <Select
+          allowClear
+          placeholder="对象类型"
+          value={kind}
+          style={{ width: 130 }}
+          onChange={(v) => { setOffset(0); setKind(v); }}
+          options={Object.entries(KIND_LABEL).map(([value, label]) => ({ value, label }))}
+        />
         <Button onClick={load}>刷新</Button>
       </Space>
       <Table
@@ -122,10 +140,17 @@ export default function SafetyReportsPage() {
                 {current.reporter_name || current.reporter_id}
               </Descriptions.Item>
               <Descriptions.Item label="举报人 ID">{current.reporter_id}</Descriptions.Item>
-              <Descriptions.Item label="被举报人">
-                {current.target_name || current.target_user_id}
+              <Descriptions.Item label="对象类型">{KIND_LABEL[current.target_kind || "user"] || current.target_kind}</Descriptions.Item>
+              {current.target_title ? <Descriptions.Item label="对象标题">{current.target_title}</Descriptions.Item> : null}
+              {current.target_id ? (
+                <Descriptions.Item label="对象 ID">
+                  {current.target_id}
+                  {current.target_exists === false ? <Tag style={{ marginLeft: 8 }}>服务端无此对象（本地内容）</Tag> : null}
+                </Descriptions.Item>
+              ) : null}
+              <Descriptions.Item label="责任用户">
+                {current.target_name || current.target_user_id || "-"}
               </Descriptions.Item>
-              <Descriptions.Item label="被举报人 ID">{current.target_user_id}</Descriptions.Item>
               <Descriptions.Item label="原因">
                 {REASON_LABEL[current.reason] || current.reason}
               </Descriptions.Item>
